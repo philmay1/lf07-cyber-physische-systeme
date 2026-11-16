@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="34" viewBox="0 0 520 34" role="img" aria-label="0 / 10 projects done">
+<rect x="0" y="9" width="380" height="16" rx="8" fill="#3a3f45"/>
+<rect x="0" y="9" width="0" height="16" rx="8" fill="#C51A4A"/>
+<line x1="38.0" y1="9" x2="38.0" y2="25" stroke="#0d1117" stroke-opacity=".35"/><line x1="76.0" y1="9" x2="76.0" y2="25" stroke="#0d1117" stroke-opacity=".35"/><line x1="114.0" y1="9" x2="114.0" y2="25" stroke="#0d1117" stroke-opacity=".35"/><line x1="152.0" y1="9" x2="152.0" y2="25" stroke="#0d1117" stroke-opacity=".35"/><line x1="190.0" y1="9" x2="190.0" y2="25" stroke="#0d1117" stroke-opacity=".35"/><line x1="228.0" y1="9" x2="228.0" y2="25" stroke="#0d1117" stroke-opacity=".35"/><line x1="266.0" y1="9" x2="266.0" y2="25" stroke="#0d1117" stroke-opacity=".35"/><line x1="304.0" y1="9" x2="304.0" y2="25" stroke="#0d1117" stroke-opacity=".35"/><line x1="342.0" y1="9" x2="342.0" y2="25" stroke="#0d1117" stroke-opacity=".35"/>
+<text x="394" y="22" font-family="Segoe UI,Helvetica,Arial,sans-serif" font-size="14" fill="#8b949e">0 / 10 projects done</text></svg>

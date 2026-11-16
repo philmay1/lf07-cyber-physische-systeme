@@ -1,3 +1,5 @@
+<a id="top"></a>
+
 <p align="center">
   <a href="README.md"><img src="docs/badges/lang-en.svg" alt="English"></a>
   <a href="README.de.md"><img src="docs/badges/lang-de.svg" alt="Deutsch"></a>
@@ -16,31 +18,171 @@
 </p>
 
 <p align="center">
-  Projekte und Übungen aus Lernfeld 7 meiner Umschulung zum Fachinformatiker für Systemintegration.
+  <b>Sensoren messen. Software entscheidet. Aktoren handeln.</b><br>
+  Praxisprojekte aus Lernfeld 7 meiner Umschulung zum Fachinformatiker für Systemintegration.
 </p>
-
-## Worum es geht
-
-Ein cyber-physisches System (CPS) verbindet Software mit der echten Welt. Sensoren messen etwas, zum Beispiel Temperatur oder einen Tastendruck. Ein Programm wertet die Messung aus und entscheidet. Aktoren setzen die Entscheidung um, etwa eine LED, ein Servo oder ein Display.
-
-In diesem Lernfeld baue ich solche Systeme Schritt für Schritt auf dem Raspberry Pi 400. Am Anfang steht eine einzelne LED, am Ende das Gesamtprojekt SENTINEL mit Zutrittskontrolle, Umweltüberwachung und Kundenabnahme.
 
 <p align="center">
-  <img src="docs/img/raspberry-pi-400-kit.jpg" alt="Raspberry Pi 400 Personal Computer Kit" width="720"><br>
-  <sub>Raspberry Pi 400 Personal Computer Kit, die Hardware für alle Projekte in diesem Repo</sub>
-  <!-- Bildquelle eintragen oder durch ein eigenes Foto ersetzen, bevor das Repo öffentlich wird -->
+  <img src="docs/badges/progress-de.svg" alt="0 von 10 Projekten fertig">
 </p>
 
-## Inhalt
+<p align="center">
+  <a href="#architektur">Architektur</a> ·
+  <a href="#projekte">Projekte</a> ·
+  <a href="#zeitplan">Zeitplan</a> ·
+  <a href="#schnellstart">Schnellstart</a> ·
+  <a href="#sicherheit">Sicherheit</a>
+</p>
 
-- [Hardware](#hardware)
-- [Software und Werkzeuge](#software-und-werkzeuge)
-- [Aufbau des Repos](#aufbau-des-repos)
-- [Projekte](#projekte)
-- [Lernfortschritt](#lernfortschritt)
-- [Schnellstart auf dem Pi](#schnellstart-auf-dem-pi)
-- [Sicherheit](#sicherheit)
-- [Über mich](#über-mich)
+---
+
+> [!NOTE]
+> Dieses Repo wächst mit dem Unterricht. Jedes Projekt bekommt einen eigenen Ordner, eine eigene README und einen Status in der [Projekttabelle](#projekte).
+
+## Auf einen Blick
+
+<table>
+<tr>
+<td width="55%" valign="top">
+
+**Was ist ein cyber-physisches System?**
+
+Ein cyber-physisches System (CPS) verbindet Software mit der echten Welt. Ein Temperatursensor meldet 31 °C, das Programm vergleicht den Wert mit einem Grenzwert, und ein Lüfter springt an. Der Raspberry Pi ist das Gehirn, die GPIO-Pins sind seine Hände.
+
+**Was passiert hier?**
+
+Zehn Projekte in zwei Wochen, von einer einzelnen LED bis zu SENTINEL: ein vernetztes System mit PIN-Zutrittskontrolle, Umweltüberwachung, Datenbank und Kundenabnahme.
+
+</td>
+<td width="45%" valign="top">
+
+<img src="docs/img/raspberry-pi-400-kit.jpg" alt="Raspberry Pi 400 Personal Computer Kit">
+<!-- Bildquelle eintragen oder durch ein eigenes Foto ersetzen, bevor das Repo öffentlich wird -->
+
+</td>
+</tr>
+</table>
+
+## Architektur
+
+Das Zielbild für SENTINEL. Jedes Projekt ergänzt einen Baustein.
+
+```mermaid
+flowchart LR
+    subgraph sensoren["Sensoren"]
+        direction TB
+        S1["DHT11<br>Temperatur, Luftfeuchte"]
+        S2["Matrix-Keypad<br>PIN-Eingabe"]
+        S3["Taster<br>Materialentnahme"]
+    end
+
+    subgraph pi["Raspberry Pi 400"]
+        P["Python-Programm<br>gpiozero, Zustandsautomat"]
+    end
+
+    subgraph aktoren["Aktoren"]
+        direction TB
+        A1["LED"]
+        A2["Servo<br>Türschloss"]
+        A3["LCD"]
+    end
+
+    subgraph netz["Netzwerk"]
+        direction TB
+        B(("MQTT-Broker<br>Mosquitto"))
+        C["Dashboard oder<br>zweites Gerät"]
+        D[("MariaDB")]
+    end
+
+    sensoren --> P
+    P --> aktoren
+    P <-->|"JSON über MQTT"| B
+    B <--> C
+    P -->|"Messwerte, Zutrittsprotokoll"| D
+```
+
+### Beispiel: Zutrittskontrolle als Zustandsautomat
+
+So verhält sich ein PIN-Schloss (Projekt 05 und 06). Wer die Zustände zuerst aufzeichnet, schreibt und testet den Code danach deutlich leichter.
+
+```mermaid
+stateDiagram-v2
+    state "PIN-Eingabe" as PINEingabe
+    state "Prüfen" as Pruefen
+    [*] --> Gesperrt
+    Gesperrt --> PINEingabe: Taste gedrückt
+    PINEingabe --> Pruefen: Raute-Taste gedrückt
+    PINEingabe --> Gesperrt: Timeout 10 s
+    Pruefen --> Offen: PIN richtig
+    Pruefen --> Gesperrt: PIN falsch
+    Pruefen --> Alarm: 3. Fehlversuch
+    Offen --> Gesperrt: nach 5 s
+    Alarm --> Gesperrt: Reset durch Admin
+```
+
+<p align="right"><a href="#top">nach oben ↑</a></p>
+
+## Projekte
+
+| Nr. | Projekt | Was es macht | Schwerpunkt | Status |
+|:-:|---|---|---|:-:|
+| 01 | [SENTINEL Projektstart](projekte/01-sentinel-projektstart/) | Schaltet eine LED sicher über einen GPIO-Pin | Vorwiderstand, GPIO-Ausgang | ⬜ |
+| 02 | [Lokale Materialstation](projekte/02-lokale-materialstation/) | Erfasst Entnahmen per Taster | Pull-up, Entprellen, Events | ⬜ |
+| 03 | [Vernetzte Materialstation](projekte/03-vernetzte-materialstation/) | Sendet jede Entnahme als MQTT-Nachricht | MQTT, JSON, Topics | ⬜ |
+| 04 | [Sicherheitsmodul Klimaprüfraum](projekte/04-sicherheitsmodul-klimapruefraum/) | Warnt, bevor jemand einen unsicheren Raum betritt | Sensorwahl, Countdown | ⬜ |
+| 05 | [Lokale Zutrittskontrolle](projekte/05-lokale-zutrittskontrolle/) | Öffnet ein Schloss nach der richtigen PIN | Keypad, PWM, Servo | ⬜ |
+| 06 | [Dynamische Zutrittskontrolle](projekte/06-dynamische-zutrittskontrolle/) | Prüft PINs gegen eine Datenbank | MariaDB, Argon2 | ⬜ |
+| 07 | [Umweltüberwachung](projekte/07-umweltueberwachung/) | Protokolliert Klimadaten und reagiert auf Grenzwerte | DHT11, Hysterese | ⬜ |
+| 08 | [Gesicherte Transportbox](projekte/08-gesicherte-transportbox/) | Verfolgt den Zustand der Box und meldet ihn | Zustandsautomat, LCD | ⬜ |
+| 09 | [SENTINEL Release Readiness](projekte/09-sentinel-release-readiness/) | Testet das Gesamtsystem und bewertet Risiken | Systemtest, FMEA | ⬜ |
+| 10 | [SENTINEL Kundenabnahme](projekte/10-sentinel-kundenabnahme/) | Übergibt das System an den "Kunden" | Abnahme, Präsentation | ⬜ |
+
+<sub>⬜ offen · 🟡 in Arbeit · ✅ fertig</sub>
+
+<details>
+<summary><b>Geplante MQTT-Topics</b> (Entwurf, ändert sich mit Projekt 03)</summary>
+
+| Topic | Richtung | Beispiel-Payload |
+|---|---|---|
+| `sentinel/station1/material` | Pi → Broker | `{"item": "M3-Schrauben", "action": "taken", "ts": "2026-11-18T09:15:00Z"}` |
+| `sentinel/room1/climate` | Pi → Broker | `{"temp_c": 22.4, "humidity": 48}` |
+| `sentinel/door1/state` | Pi → Broker | `{"state": "locked"}` |
+| `sentinel/door1/command` | Broker → Pi | `{"cmd": "unlock", "by": "admin"}` |
+
+</details>
+
+## Zeitplan
+
+Geplanter Ablauf der zwei Unterrichtswochen.[^1]
+
+```mermaid
+timeline
+    title LF07 in zehn Unterrichtstagen
+    section Woche 1
+        Tag 1 : Grundlagen, LED, GPIO
+        Tag 2 : Eingänge und Entprellen
+        Tag 3 : MQTT und IoT-Protokolle
+        Tag 4 : Sensoren und Zeitlogik
+        Tag 5 : Keypad, PWM, Servo
+    section Woche 2
+        Tag 6 : MariaDB und Argon2
+        Tag 7 : DHT11 und Telemetrie
+        Tag 8 : Zustandsautomaten und LCD
+        Tag 9 : DevOps, Security, FMEA
+        Tag 10 : Abnahme und Lernzielkontrolle
+```
+
+### Was ich nach LF07 kann
+
+- [ ] LEDs, Taster und Sensoren sicher an den GPIO-Header anschließen
+- [ ] Eingänge zuverlässig mit Pull-up-Widerständen und Entprellen einlesen
+- [ ] Geräte per MQTT mit einer klaren JSON-Schnittstelle verbinden
+- [ ] Messwerte und gehashte PINs in MariaDB speichern
+- [ ] Abläufe als Zustandsautomat modellieren
+- [ ] Risiken mit Bedrohungsanalyse und FMEA bewerten
+- [ ] Ein System beim Kunden präsentieren und übergeben
+
+<p align="right"><a href="#top">nach oben ↑</a></p>
 
 ## Hardware
 
@@ -51,97 +193,14 @@ In diesem Lernfeld baue ich solche Systeme Schritt für Schritt auf dem Raspberr
 | Starter Kit | Maus, USB-C-Netzteil, Micro-HDMI-Kabel, microSD-Karte mit Raspberry Pi OS, Beginner's Guide |
 | Bauteile | LEDs mit Vorwiderständen, Taster, DHT11, Matrix-Keypad, Servo, LCD, Steckbrett und Jumperkabel |
 
-## Software und Werkzeuge
+> [!TIP]
+> Im Terminal des Pi `pinout` eingeben. Der Befehl zeigt eine Karte aller 40 GPIO-Pins, das spart viel Abzählen.
 
-| Bereich | Einsatz |
-|---|---|
-| Raspberry Pi OS | Betriebssystem auf dem Pi |
-| Python 3 mit `gpiozero` | GPIO ansteuern: LEDs, Taster, Servo |
-| MQTT (Mosquitto, `paho-mqtt`) | Nachrichten zwischen Geräten im JSON-Format |
-| MariaDB | Messwerte und Zugangsdaten speichern |
-| Argon2 | PINs und Passwörter sicher hashen |
-| Git, GitHub, VS Code mit Remote-SSH | Code am PC schreiben, auf dem Pi ausführen, Versionen sichern |
-
-## Aufbau des Repos
-
-```text
-lf07-cyber-physische-systeme/
-├── README.md                 englische Fassung
-├── README.de.md              diese Seite
-├── docs/
-│   ├── badges/               Badges als lokale SVG-Dateien
-│   ├── img/                  Banner, Fotos, Screenshots
-│   └── schaltplaene/         Schaltpläne der Aufbauten
-├── projekte/
-│   ├── 01-sentinel-projektstart/
-│   ├── 02-lokale-materialstation/
-│   ├── 03-vernetzte-materialstation/
-│   ├── 04-sicherheitsmodul-klimapruefraum/
-│   ├── 05-lokale-zutrittskontrolle/
-│   ├── 06-dynamische-zutrittskontrolle/
-│   ├── 07-umweltueberwachung/
-│   ├── 08-gesicherte-transportbox/
-│   ├── 09-sentinel-release-readiness/
-│   └── 10-sentinel-kundenabnahme/
-└── vorlagen/
-    ├── PROJECT_README.md     Projektvorlage auf Englisch
-    └── PROJEKT_README.de.md  Projektvorlage auf Deutsch
-```
-
-Jeder Projektordner bekommt eine eigene README nach der [Vorlage](vorlagen/PROJEKT_README.de.md): Ziel, Schaltung, Pinbelegung, Start, Test und was ich dabei gelernt habe.
-
-## Projekte
-
-| Nr. | Projekt | Thema | Status |
-|---|---|---|---|
-| 01 | [SENTINEL Projektstart](projekte/01-sentinel-projektstart/) | sichere LED-Schaltung, GPIO-Ausgang | ⬜ offen |
-| 02 | [Lokale Materialstation](projekte/02-lokale-materialstation/) | digitale Eingänge, Pull-up und Pull-down, Entprellen | ⬜ offen |
-| 03 | [Vernetzte Materialstation](projekte/03-vernetzte-materialstation/) | MQTT, JSON, Topics | ⬜ offen |
-| 04 | [Sicherheitsmodul Klimaprüfraum](projekte/04-sicherheitsmodul-klimapruefraum/) | Sensorwahl, Zustände, Countdown | ⬜ offen |
-| 05 | [Lokale Zutrittskontrolle](projekte/05-lokale-zutrittskontrolle/) | Matrix-Keypad, PIN, PWM und Servo | ⬜ offen |
-| 06 | [Dynamische Zutrittskontrolle](projekte/06-dynamische-zutrittskontrolle/) | MariaDB, Argon2-Hashes | ⬜ offen |
-| 07 | [Umweltüberwachung](projekte/07-umweltueberwachung/) | DHT11, Telemetrie, Hysterese | ⬜ offen |
-| 08 | [Gesicherte Transportbox](projekte/08-gesicherte-transportbox/) | Zustandsautomat, LCD, MQTT in beide Richtungen | ⬜ offen |
-| 09 | [SENTINEL Release Readiness](projekte/09-sentinel-release-readiness/) | Systemtest, Bedrohungsanalyse, FMEA | ⬜ offen |
-| 10 | [SENTINEL Kundenabnahme](projekte/10-sentinel-kundenabnahme/) | Abnahme, Übergabe, Präsentation | ⬜ offen |
-
-Status: ⬜ offen, 🟡 in Arbeit, ✅ fertig
-
-## Lernfortschritt
-
-Die Reihenfolge folgt der Agenda des Lernfelds. Die Aufteilung auf die Tage ist meine Schätzung.
-
-<details>
-<summary><b>Woche 1</b>: Grundlagen, Eingänge, Vernetzung, Aktorik</summary>
-
-| Tag | Themen | Erledigt |
-|---|---|---|
-| 1 | Orientierung, CPS-Architektur und Plattformwahl, Elektrosicherheit, sichere LED-Schaltung, Inbetriebnahme von Pi und GPIO | ⬜ |
-| 2 | Digitale Eingänge, definierte Ruhepegel, Polling, Eventhandling, Entprellen | ⬜ |
-| 3 | MQTT und M2M, IoT-Protokolle, Industrial Internet, JSON und Schnittstellenvertrag | ⬜ |
-| 4 | Sensorwahl und Personensicherheit, Zeitlogik, Zustände, Countdown | ⬜ |
-| 5 | Matrix-Keypad und PIN-Eingabe, PWM, Servo, sichere Aktorik | ⬜ |
-
-</details>
-
-<details>
-<summary><b>Woche 2</b>: Daten, Sicherheit, Abnahme</summary>
-
-| Tag | Themen | Erledigt |
-|---|---|---|
-| 6 | MariaDB, SQL und Datenmodell, Hashing mit Argon2, sichere Konfiguration | ⬜ |
-| 7 | DHT11-Messung und Plausibilität, Telemetrie, Persistenz, Hysterese | ⬜ |
-| 8 | Zustandsautomaten, Transportlogik, paralleles LCD, MQTT in beide Richtungen | ⬜ |
-| 9 | DevOps, Git und Systemtest, Bedrohungsanalyse, FMEA und Risikopriorisierung | ⬜ |
-| 10 | Abnahme, Übergabe und Kundenpräsentation, Lernzielkontrolle, Lessons Learned | ⬜ |
-
-</details>
-
-## Schnellstart auf dem Pi
+## Schnellstart
 
 ```bash
 # Repo auf den Pi holen
-git clone https://github.com/<benutzername>/lf07-cyber-physische-systeme.git
+git clone https://github.com/philmay1/lf07-cyber-physische-systeme.git
 cd lf07-cyber-physische-systeme
 
 # Virtuelle Umgebung anlegen und Pakete installieren
@@ -153,17 +212,38 @@ pip install -r requirements.txt
 python3 projekte/01-sentinel-projektstart/main.py
 ```
 
-Ich schreibe den Code in VS Code am PC und bin per Remote-SSH mit dem Pi verbunden. Jeder funktionierende Stand bekommt einen Commit.
+<details>
+<summary><b>Mein Arbeitsablauf: PC, GitHub und Pi</b></summary>
+
+```mermaid
+sequenceDiagram
+    participant PC as VS Code am PC
+    participant GH as GitHub
+    participant Pi as Raspberry Pi 400
+    PC->>Pi: Code per Remote-SSH bearbeiten und starten
+    Pi-->>PC: Ausgabe, Fehlermeldungen
+    PC->>GH: Commit und Push
+    GH->>Pi: git pull auf einem zweiten Pi oder nach einem Reset
+```
+
+Nützliche Tastenkürzel in VS Code: <kbd>Strg</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> öffnet die Befehlspalette, <kbd>Strg</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd> die Quellcodeverwaltung.
+
+</details>
 
 ## Sicherheit
 
-- Vor jeder Änderung an der Schaltung trenne ich den Pi vom Strom.
-- Die GPIO-Pins vertragen nur 3,3 V. Eine LED bekommt immer einen Vorwiderstand.
-- Passwörter, PINs, WLAN-Daten und Tokens stehen in einer `.env`-Datei. Die `.gitignore` schließt sie vom Upload aus.
-- PINs speichere ich nur als Argon2-Hash, nie im Klartext.
+> [!WARNING]
+> Die GPIO-Pins arbeiten mit 3,3 V. Wer 5 V auf einen Eingang legt, kann den Pi zerstören. Jede LED braucht einen Vorwiderstand, und beim Umstecken ist der Pi vom Strom getrennt.
+
+> [!IMPORTANT]
+> Passwörter, PINs, WLAN-Daten und Tokens kommen nie in den Code. Sie stehen in einer `.env`-Datei, die `.gitignore` vom Repo ausschließt. PINs speichere ich nur als Argon2-Hash.
 
 ## Über mich
 
 Ich mache eine Umschulung zum Fachinformatiker für Systemintegration bei der GFN. In diesem Repo dokumentiere ich, was ich in Lernfeld 7 praktisch umgesetzt habe.
 
 <!-- Optional: Link zum GitHub-Profil oder zu LinkedIn ergänzen -->
+
+<p align="right"><a href="#top">nach oben ↑</a></p>
+
+[^1]: Die Reihenfolge folgt der offiziellen Agenda. Die Aufteilung auf die Tage ist meine Schätzung.
