@@ -1,0 +1,3 @@
+# Auf Raspberry Pi OS ist gpiozero schon installiert.
+# In einer venv: python3 -m venv --system-site-packages .venv
+gpiozero>=2.0

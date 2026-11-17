@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/badges/progress-de.svg" alt="0 von 10 Projekten fertig">
+  <img src="docs/badges/progress-de.svg" alt="1 von 10 Projekten fertig">
 </p>
 
 <p align="center">
@@ -126,7 +126,7 @@ stateDiagram-v2
 
 | Nr. | Projekt | Was es macht | Schwerpunkt | Status |
 |:-:|---|---|---|:-:|
-| 01 | [SENTINEL Projektstart](projekte/01-sentinel-projektstart/) | Schaltet eine LED sicher über einen GPIO-Pin | Vorwiderstand, GPIO-Ausgang | ⬜ |
+| 01 | [SENTINEL Projektstart](projekte/01-sentinel-projektstart/) | Schaltet eine LED sicher über einen GPIO-Pin | Vorwiderstand, GPIO-Ausgang | ✅ |
 | 02 | [Lokale Materialstation](projekte/02-lokale-materialstation/) | Erfasst Entnahmen per Taster | Pull-up, Entprellen, Events | ⬜ |
 | 03 | [Vernetzte Materialstation](projekte/03-vernetzte-materialstation/) | Sendet jede Entnahme als MQTT-Nachricht | MQTT, JSON, Topics | ⬜ |
 | 04 | [Sicherheitsmodul Klimaprüfraum](projekte/04-sicherheitsmodul-klimapruefraum/) | Warnt, bevor jemand einen unsicheren Raum betritt | Sensorwahl, Countdown | ⬜ |
@@ -204,7 +204,7 @@ git clone https://github.com/philmay1/lf07-cyber-physische-systeme.git
 cd lf07-cyber-physische-systeme
 
 # Virtuelle Umgebung anlegen und Pakete installieren
-python3 -m venv .venv
+python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 

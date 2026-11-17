@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/badges/progress-en.svg" alt="0 of 10 projects done">
+  <img src="docs/badges/progress-en.svg" alt="1 of 10 projects done">
 </p>
 
 <p align="center">
@@ -125,7 +125,7 @@ stateDiagram-v2
 
 | No. | Project | What it does | Key skills | Status |
 |:-:|---|---|---|:-:|
-| 01 | [SENTINEL kickoff](projekte/01-sentinel-projektstart/) | Lights an LED safely through a GPIO pin | Series resistor, GPIO output | ⬜ |
+| 01 | [SENTINEL kickoff](projekte/01-sentinel-projektstart/) | Lights an LED safely through a GPIO pin | Series resistor, GPIO output | ✅ |
 | 02 | [Local material station](projekte/02-lokale-materialstation/) | Registers withdrawals with a button | Pull-up, debouncing, events | ⬜ |
 | 03 | [Networked material station](projekte/03-vernetzte-materialstation/) | Sends every withdrawal as an MQTT message | MQTT, JSON, topics | ⬜ |
 | 04 | [Safety module for a climate test room](projekte/04-sicherheitsmodul-klimapruefraum/) | Warns before anyone enters an unsafe room | Sensor choice, countdown | ⬜ |
@@ -203,7 +203,7 @@ git clone https://github.com/philmay1/lf07-cyber-physische-systeme.git
 cd lf07-cyber-physische-systeme
 
 # Create a virtual environment and install packages
-python3 -m venv .venv
+python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
