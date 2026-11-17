@@ -18,7 +18,7 @@ The first building block of SENTINEL is a status LED. The Raspberry Pi switches 
 |---|---|---|
 | Raspberry Pi 400 (Pi 4B in the Fritzing sketch, same 40-pin header) | 1 | |
 | Red LED, 5 mm | 1 | long leg = anode (+) |
-| Resistor 330 Ω | 1 | bands orange, orange, brown |
+| Resistor 220 Ω | 1 | strip "220R" in the Miuzei kit, bands red, red, black, black, brown |
 | Breadboard | 1 | |
 | Jumper wires | 3 | green = signal, black = GND |
 
@@ -26,15 +26,15 @@ The first building block of SENTINEL is a status LED. The Raspberry Pi switches 
 
 | Part | GPIO (BCM) | Physical pin |
 |---|---|---|
-| LED via 330 Ω | GPIO25 | 22 |
+| LED via 220 Ω | GPIO25 | 22 |
 | GND | | 30 |
 
-Current path: GPIO25 → 330 Ω → LED anode → LED cathode → GND.
+Current path: GPIO25 → 220 Ω → LED anode → LED cathode → GND.
 
 | Wire / part | from | to |
 |---|---|---|
 | Wire1 (green) | pin 22, GPIO25 | breadboard 20A |
-| R1 330 Ω | 20C | 24C |
+| R1 220 Ω | 20C | 24C |
 | LED1 anode | 24E | |
 | LED1 cathode | 23E | |
 | Wire2 (black) | 23A | GND rail (blue line) |
@@ -72,13 +72,13 @@ flowchart TD
     H --> I([End])
 ```
 
-### Why 330 Ω
+### Why 220 Ω
 
 The GPIO supplies 3.3 V and the red LED needs about 2.0 V, so 1.3 V drops across the resistor:
 
-I = U / R = 1.3 V / 330 Ω ≈ 4 mA
+I = U / R = 1.3 V / 220 Ω ≈ 6 mA
 
-That is bright enough and well below the roughly 16 mA a GPIO pin can handle.
+That is nicely bright and well below the roughly 16 mA a GPIO pin can handle.
 
 ## Test
 

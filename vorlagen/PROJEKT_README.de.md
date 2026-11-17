@@ -20,7 +20,7 @@
 | Bauteil | Anzahl | Hinweis |
 |---|---|---|
 | Raspberry Pi 400 | 1 | |
-| <LED rot> | <1> | <mit 330-Ω-Vorwiderstand> |
+| <LED rot> | <1> | <mit 220-Ω-Vorwiderstand> |
 | <Taster> | <1> | <interner Pull-up> |
 
 ## Pinbelegung

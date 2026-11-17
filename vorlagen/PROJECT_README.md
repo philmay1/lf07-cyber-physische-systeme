@@ -20,7 +20,7 @@
 | Component | Qty | Note |
 |---|---|---|
 | Raspberry Pi 400 | 1 | |
-| <Red LED> | <1> | <with 330 Ω series resistor> |
+| <Red LED> | <1> | <with 220 Ω series resistor> |
 | <Push button> | <1> | <internal pull-up> |
 
 ## Pin mapping

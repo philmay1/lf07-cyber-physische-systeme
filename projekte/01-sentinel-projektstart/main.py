@@ -1,7 +1,7 @@
 """SENTINEL Projektstart: Status-LED an GPIO25.
 
 Die LED leuchtet 1 Sekunde und ist dann 2 Sekunden aus, bis Strg+C gedrückt wird.
-Schaltung: GPIO25 (Pin 22) -> 330-Ohm-Widerstand -> LED (Anode) -> LED (Kathode) -> GND (Pin 30)
+Schaltung: GPIO25 (Pin 22) -> 220-Ohm-Widerstand -> LED (Anode) -> LED (Kathode) -> GND (Pin 30)
 """
 from time import sleep
 
