@@ -27,6 +27,7 @@
 </p>
 
 <p align="center">
+  <a href="#current-status">Current status</a> ·
   <a href="#architecture">Architecture</a> ·
   <a href="#projects">Projects</a> ·
   <a href="#roadmap">Roadmap</a> ·
@@ -63,9 +64,32 @@ Ten projects in two weeks, from a single LED to SENTINEL: a networked system wit
 </tr>
 </table>
 
+## Current status
+
+<table>
+<tr>
+<td width="45%" valign="top">
+
+<img src="docs/schaltplaene/01-led-gpio25_steckplatine.png" alt="Breadboard view of project 01: LED with 220 ohm series resistor on GPIO25">
+
+</td>
+<td width="55%" valign="top">
+
+**✅ Project 01 done: [SENTINEL kickoff](projekte/01-sentinel-projektstart/)**
+
+A red LED is wired through a 220 ohm series resistor to GPIO25 (pin 22). A short Python program using `gpiozero` makes it blink: 1 s on, 2 s off. After Ctrl+C the LED turns off and the pin is released. Tested on the Raspberry Pi 400.
+
+What I learned: the GPIO number and the pin number are two different things, and without a series resistor the pin can get damaged.
+
+**Next up:** [Project 02 Local material station](projekte/02-lokale-materialstation/). A push button becomes an input, with pull-up and debouncing.
+
+</td>
+</tr>
+</table>
+
 ## Architecture
 
-The target picture for SENTINEL. Every project adds one building block.
+The target picture for SENTINEL. Every project adds one building block. Green is already built.
 
 ```mermaid
 flowchart LR
@@ -99,6 +123,9 @@ flowchart LR
     P <-->|"JSON over MQTT"| B
     B <--> C
     P -->|"readings, access log"| D
+
+    classDef done fill:#2ea043,stroke:#2ea043,color:#fff
+    class A1,P done
 ```
 
 ### Example: access control as a state machine
@@ -158,7 +185,7 @@ Planned schedule for the two course weeks.[^1]
 timeline
     title LF07 in ten course days
     section Week 1
-        Day 1 : Basics, LED, GPIO
+        Day 1 : Basics, LED, GPIO ✅
         Day 2 : Inputs and debouncing
         Day 3 : MQTT and IoT protocols
         Day 4 : Sensors and timing logic

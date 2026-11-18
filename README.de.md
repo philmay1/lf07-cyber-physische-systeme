@@ -27,6 +27,7 @@
 </p>
 
 <p align="center">
+  <a href="#aktueller-stand">Aktueller Stand</a> ·
   <a href="#architektur">Architektur</a> ·
   <a href="#projekte">Projekte</a> ·
   <a href="#zeitplan">Zeitplan</a> ·
@@ -63,9 +64,32 @@ Zehn Projekte in zwei Wochen, von einer einzelnen LED bis zu SENTINEL: ein verne
 </tr>
 </table>
 
+## Aktueller Stand
+
+<table>
+<tr>
+<td width="45%" valign="top">
+
+<img src="docs/schaltplaene/01-led-gpio25_steckplatine.png" alt="Steckplatine Projekt 01: LED mit 220-Ohm-Vorwiderstand an GPIO25">
+
+</td>
+<td width="55%" valign="top">
+
+**✅ Projekt 01 fertig: [SENTINEL Projektstart](projekte/01-sentinel-projektstart/)**
+
+Eine rote LED hängt über einen 220-Ohm-Vorwiderstand an GPIO25 (Pin 22). Ein kurzes Python-Programm mit `gpiozero` lässt sie blinken: 1 s an, 2 s aus. Nach Strg+C geht die LED aus und der Pin wird freigegeben. Am Raspberry Pi 400 getestet.
+
+Was ich dabei gelernt habe: GPIO-Nummer und Pinnummer sind zwei verschiedene Dinge, und ohne Vorwiderstand kann der Pin Schaden nehmen.
+
+**Als Nächstes:** [Projekt 02 Lokale Materialstation](projekte/02-lokale-materialstation/). Ein Taster wird zum Eingang, mit Pull-up und Entprellen.
+
+</td>
+</tr>
+</table>
+
 ## Architektur
 
-Das Zielbild für SENTINEL. Jedes Projekt ergänzt einen Baustein.
+Das Zielbild für SENTINEL. Jedes Projekt ergänzt einen Baustein. Grün ist schon umgesetzt.
 
 ```mermaid
 flowchart LR
@@ -99,6 +123,9 @@ flowchart LR
     P <-->|"JSON über MQTT"| B
     B <--> C
     P -->|"Messwerte, Zutrittsprotokoll"| D
+
+    classDef fertig fill:#2ea043,stroke:#2ea043,color:#fff
+    class A1,P fertig
 ```
 
 ### Beispiel: Zutrittskontrolle als Zustandsautomat
@@ -159,7 +186,7 @@ Geplanter Ablauf der zwei Unterrichtswochen.[^1]
 timeline
     title LF07 in zehn Unterrichtstagen
     section Woche 1
-        Tag 1 : Grundlagen, LED, GPIO
+        Tag 1 : Grundlagen, LED, GPIO ✅
         Tag 2 : Eingänge und Entprellen
         Tag 3 : MQTT und IoT-Protokolle
         Tag 4 : Sensoren und Zeitlogik
