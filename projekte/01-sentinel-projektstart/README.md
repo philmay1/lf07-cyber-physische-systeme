@@ -4,7 +4,7 @@
 
 The first building block of SENTINEL is a status LED. The Raspberry Pi switches it through a GPIO pin: on for 1 second, off for 2 seconds. Later the same LED will show whether the system is running, a door is open or an alarm is active.
 
-![Breadboard](../../docs/schaltplaene/01-led-gpio25_steckplatine.png)
+![Breadboard](schaltplan/01-led-gpio25_steckplatine.png)
 
 ## Goal
 
@@ -40,9 +40,9 @@ Current path: GPIO25 → 220 Ω → LED anode → LED cathode → GND.
 | Wire2 (black) | 23A | GND rail (blue line) |
 | Wire3 (black) | pin 30, GND | GND rail |
 
-Schematic: [docs/schaltplaene/01-led-gpio25_schaltplan.png](../../docs/schaltplaene/01-led-gpio25_schaltplan.png) · Fritzing file: [01-led-gpio25.fzz](../../docs/schaltplaene/01-led-gpio25.fzz)
+Schematic: [schaltplan/01-led-gpio25_schaltplan.png](schaltplan/01-led-gpio25_schaltplan.png) · Fritzing file: [01-led-gpio25.fzz](schaltplan/01-led-gpio25.fzz)
 
-![Schematic](../../docs/schaltplaene/01-led-gpio25_schaltplan.png)
+![Schematic](schaltplan/01-led-gpio25_schaltplan.png)
 
 ## Run
 

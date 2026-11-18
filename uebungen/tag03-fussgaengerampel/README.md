@@ -4,7 +4,7 @@
 
 A traffic light for cars and a pedestrian light on the Raspberry Pi 400. A push button requests green for pedestrians, and a buzzer ticks during their green phase as a signal for blind people. It is based on the traffic light project in the official Raspberry Pi Beginner's Guide (p. 142), rewritten in Python with the German light sequence and clearance phases.
 
-![Breadboard](02-ampel_steckplatine.png)
+![Breadboard](schaltplan/ampel_steckplatine.png)
 
 ## Pin mapping
 
@@ -34,4 +34,4 @@ python3 ampel.py
 | Test | Expected | Result |
 |---|---|---|
 | Simulation with gpiozero mock pins | correct sequence, cars and pedestrians never green at the same time | ✅ |
-| Hardware on the Pi | same sequence as above | ⬜ |
+| Hardware on the Pi | same sequence as above | ✅ |

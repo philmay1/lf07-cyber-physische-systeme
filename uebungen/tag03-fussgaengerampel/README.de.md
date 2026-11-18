@@ -4,7 +4,7 @@
 
 Eine Autoampel und eine Fußgängerampel am Raspberry Pi 400. Ein Taster fordert Grün für Fußgänger an, ein Summer tickt während der Grünphase als Signal für blinde Menschen. Vorlage war das Ampelprojekt im Raspberry-Pi-Handbuch (S. 142). Diese Fassung läuft in Python, folgt der deutschen Phasenfolge und hat Räumzeiten.
 
-![Steckplatine](02-ampel_steckplatine.png)
+![Steckplatine](schaltplan/ampel_steckplatine.png)
 
 ## Pinbelegung
 
@@ -53,4 +53,4 @@ stateDiagram-v2
 | Test | Erwartung | Ergebnis |
 |---|---|---|
 | Simulation mit gpiozero-Mock-Pins | richtige Phasenfolge, nie gleichzeitig grün für Autos und Fußgänger | ✅ |
-| Aufbau am Pi | wie im Ablauf oben | ⬜ |
+| Aufbau am Pi | wie im Ablauf oben | ✅ |

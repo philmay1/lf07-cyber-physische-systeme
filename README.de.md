@@ -23,13 +23,14 @@
 </p>
 
 <p align="center">
-  <img src="docs/badges/progress-de.svg" alt="1 von 10 Projekten fertig">
+  <img src="docs/badges/progress-de.svg" alt="2 von 11 erledigt (Projekte und Übungen)">
 </p>
 
 <p align="center">
   <a href="#aktueller-stand">Aktueller Stand</a> ·
   <a href="#architektur">Architektur</a> ·
   <a href="#projekte">Projekte</a> ·
+  <a href="#übungen">Übungen</a> ·
   <a href="#zeitplan">Zeitplan</a> ·
   <a href="#schnellstart">Schnellstart</a> ·
   <a href="#sicherheit">Sicherheit</a>
@@ -38,7 +39,7 @@
 ---
 
 > [!NOTE]
-> Dieses Repo wächst mit dem Unterricht. Jedes Projekt bekommt einen eigenen Ordner, eine eigene README und einen Status in der [Projekttabelle](#projekte).
+> Dieses Repo wächst mit dem Unterricht. Die zehn SENTINEL-Projekte liegen in `projekte/`, zusätzliche Übungen in `uebungen/`. Jeder Ordner bringt README, Code und Schaltplan mit. Die Fortschrittsanzeige zählt beides.
 
 ## Auf einen Blick
 
@@ -70,18 +71,19 @@ Zehn Projekte in zwei Wochen, von einer einzelnen LED bis zu SENTINEL: ein verne
 <tr>
 <td width="45%" valign="top">
 
-<img src="docs/schaltplaene/01-led-gpio25_steckplatine.png" alt="Steckplatine Projekt 01: LED mit 220-Ohm-Vorwiderstand an GPIO25">
+<img src="uebungen/tag03-fussgaengerampel/schaltplan/ampel_steckplatine.png" alt="Steckplatine der Fußgängerampel mit fünf LEDs, Taster und Summer">
 
 </td>
 <td width="55%" valign="top">
 
-**✅ Projekt 01 fertig: [SENTINEL Projektstart](projekte/01-sentinel-projektstart/)**
+**Zuletzt fertig, beides am Raspberry Pi 400 aufgebaut und getestet**
 
-Eine rote LED hängt über einen 220-Ohm-Vorwiderstand an GPIO25 (Pin 22). Ein kurzes Python-Programm mit `gpiozero` lässt sie blinken: 1 s an, 2 s aus. Nach Strg+C geht die LED aus und der Pin wird freigegeben. Am Raspberry Pi 400 getestet.
+- ✅ Übung Tag 3: [Fußgängerampel](uebungen/tag03-fussgaengerampel/). Auto- und Fußgängerampel mit Anforderungstaster. Ein Summer tickt während Fußgänger-Grün als Signal für blinde Menschen.
+- ✅ Projekt 01: [SENTINEL Projektstart](projekte/01-sentinel-projektstart/). Eine Status-LED an GPIO25 blinkt 1 s an, 2 s aus.
 
-Was ich dabei gelernt habe: GPIO-Nummer und Pinnummer sind zwei verschiedene Dinge, und ohne Vorwiderstand kann der Pin Schaden nehmen.
+**Was ich dabei gelernt habe:** GPIO-Nummer und Pinnummer sind zwei verschiedene Dinge. Jede LED braucht einen Vorwiderstand. Ein Taster braucht einen Pull-up und Entprellen, und den Summer schaltet ein Transistor, weil der Pin ihn nicht allein treiben sollte.
 
-**Als Nächstes:** [Projekt 02 Lokale Materialstation](projekte/02-lokale-materialstation/). Ein Taster wird zum Eingang, mit Pull-up und Entprellen.
+**Als Nächstes:** Projekt 02 Lokale Materialstation. Ein Taster wird zum Eingang, mit Pull-up und Entprellen.
 
 </td>
 </tr>
@@ -154,17 +156,25 @@ stateDiagram-v2
 | Nr. | Projekt | Was es macht | Schwerpunkt | Status |
 |:-:|---|---|---|:-:|
 | 01 | [SENTINEL Projektstart](projekte/01-sentinel-projektstart/) | Schaltet eine LED sicher über einen GPIO-Pin | Vorwiderstand, GPIO-Ausgang | ✅ |
-| 02 | [Lokale Materialstation](projekte/02-lokale-materialstation/) | Erfasst Entnahmen per Taster | Pull-up, Entprellen, Events | ⬜ |
-| 03 | [Vernetzte Materialstation](projekte/03-vernetzte-materialstation/) | Sendet jede Entnahme als MQTT-Nachricht | MQTT, JSON, Topics | ⬜ |
-| 04 | [Sicherheitsmodul Klimaprüfraum](projekte/04-sicherheitsmodul-klimapruefraum/) | Warnt, bevor jemand einen unsicheren Raum betritt | Sensorwahl, Countdown | ⬜ |
-| 05 | [Lokale Zutrittskontrolle](projekte/05-lokale-zutrittskontrolle/) | Öffnet ein Schloss nach der richtigen PIN | Keypad, PWM, Servo | ⬜ |
-| 06 | [Dynamische Zutrittskontrolle](projekte/06-dynamische-zutrittskontrolle/) | Prüft PINs gegen eine Datenbank | MariaDB, Argon2 | ⬜ |
-| 07 | [Umweltüberwachung](projekte/07-umweltueberwachung/) | Protokolliert Klimadaten und reagiert auf Grenzwerte | DHT11, Hysterese | ⬜ |
-| 08 | [Gesicherte Transportbox](projekte/08-gesicherte-transportbox/) | Verfolgt den Zustand der Box und meldet ihn | Zustandsautomat, LCD | ⬜ |
-| 09 | [SENTINEL Release Readiness](projekte/09-sentinel-release-readiness/) | Testet das Gesamtsystem und bewertet Risiken | Systemtest, FMEA | ⬜ |
-| 10 | [SENTINEL Kundenabnahme](projekte/10-sentinel-kundenabnahme/) | Übergibt das System an den "Kunden" | Abnahme, Präsentation | ⬜ |
+| 02 | Lokale Materialstation | Erfasst Entnahmen per Taster | Pull-up, Entprellen, Events | ⬜ |
+| 03 | Vernetzte Materialstation | Sendet jede Entnahme als MQTT-Nachricht | MQTT, JSON, Topics | ⬜ |
+| 04 | Sicherheitsmodul Klimaprüfraum | Warnt, bevor jemand einen unsicheren Raum betritt | Sensorwahl, Countdown | ⬜ |
+| 05 | Lokale Zutrittskontrolle | Öffnet ein Schloss nach der richtigen PIN | Keypad, PWM, Servo | ⬜ |
+| 06 | Dynamische Zutrittskontrolle | Prüft PINs gegen eine Datenbank | MariaDB, Argon2 | ⬜ |
+| 07 | Umweltüberwachung | Protokolliert Klimadaten und reagiert auf Grenzwerte | DHT11, Hysterese | ⬜ |
+| 08 | Gesicherte Transportbox | Verfolgt den Zustand der Box und meldet ihn | Zustandsautomat, LCD | ⬜ |
+| 09 | SENTINEL Release Readiness | Testet das Gesamtsystem und bewertet Risiken | Systemtest, FMEA | ⬜ |
+| 10 | SENTINEL Kundenabnahme | Übergibt das System an den "Kunden" | Abnahme, Präsentation | ⬜ |
 
 <sub>⬜ offen · 🟡 in Arbeit · ✅ fertig</sub>
+
+## Übungen
+
+Zusätzliche Aufgaben aus dem Unterricht und dem Raspberry-Pi-Handbuch. Sie gehören nicht zu SENTINEL, zählen aber in der Fortschrittsanzeige mit.
+
+| Tag | Übung | Was sie macht | Schwerpunkt | Status |
+|:-:|---|---|---|:-:|
+| 03 | [Fußgängerampel](uebungen/tag03-fussgaengerampel/) | Auto- und Fußgängerampel mit Anforderungstaster und Ticksignal | Pull-up, Entprellen, Event, PNP-Transistor | ✅ |
 
 <details>
 <summary><b>Geplante MQTT-Topics</b> (Entwurf, ändert sich mit Projekt 03)</summary>
@@ -223,6 +233,22 @@ timeline
 > [!TIP]
 > Im Terminal des Pi `pinout` eingeben. Der Befehl zeigt eine Karte aller 40 GPIO-Pins, das spart viel Abzählen.
 
+## Aufbau des Repos
+
+```text
+.
+├── projekte/                     SENTINEL-Projekte 01 bis 10
+│   └── 01-sentinel-projektstart/
+│       ├── README.md, README.de.md
+│       ├── main.py
+│       └── schaltplan/           Fritzing-Datei (.fzz) und Bilder
+├── uebungen/                     Übungen aus Unterricht und Handbuch
+│   └── tag03-fussgaengerampel/   gleicher Aufbau wie ein Projekt
+├── docs/                         Banner, Bilder und Badges für die README
+├── .github/vorlagen/             README-Vorlagen für neue Projekte
+└── requirements.txt
+```
+
 ## Schnellstart
 
 ```bash
@@ -237,6 +263,9 @@ pip install -r requirements.txt
 
 # Ein Projekt starten, zum Beispiel das erste
 python3 projekte/01-sentinel-projektstart/main.py
+
+# Oder die Fußgängerampel
+python3 uebungen/tag03-fussgaengerampel/ampel.py
 ```
 
 <details>

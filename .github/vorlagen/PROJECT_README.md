@@ -31,7 +31,7 @@
 | <Button> | <GPIO27> | <13> |
 | GND | | <6> |
 
-Wiring diagram: [docs/schaltplaene/<project>.png](../../docs/schaltplaene/<project>.png)
+Wiring diagram: [schaltplan/<project>_schaltplan.png](schaltplan/<project>_schaltplan.png)
 
 ## Run it
 

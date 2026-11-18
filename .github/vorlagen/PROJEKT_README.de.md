@@ -31,7 +31,7 @@
 | <Taster> | <GPIO27> | <13> |
 | GND | | <6> |
 
-Schaltplan: [docs/schaltplaene/<projekt>.png](../../docs/schaltplaene/<projekt>.png)
+Schaltplan: [schaltplan/<projekt>_schaltplan.png](schaltplan/<projekt>_schaltplan.png)
 
 ## Starten
 
