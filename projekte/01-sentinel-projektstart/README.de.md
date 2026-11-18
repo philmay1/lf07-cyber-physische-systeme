@@ -86,8 +86,8 @@ Das ist gut hell und liegt weit unter den etwa 16 mA, die ein GPIO-Pin verträgt
 |---|---|---|
 | Schaltung in Fritzing prüfen | geschlossener Kreis GPIO25 → R1 → LED → GND, keine offenen Luftlinien | ✅ |
 | LED-Polung | langes Bein am Widerstand, kurzes an GND | ✅ (Fritzing) |
-| `python3 main.py` am Pi | LED 1 s an, 2 s aus | ⬜ am Pi abhaken |
-| Strg+C drücken | Meldung "Beendet.", LED aus | ⬜ am Pi abhaken |
+| `python3 main.py` am Pi | LED 1 s an, 2 s aus | ✅ |
+| Strg+C drücken | Meldung "Beendet.", LED aus | ✅ |
 
 ## Sicherheit
 

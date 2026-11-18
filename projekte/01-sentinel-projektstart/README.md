@@ -86,8 +86,8 @@ That is nicely bright and well below the roughly 16 mA a GPIO pin can handle.
 |---|---|---|
 | Check circuit in Fritzing | closed loop GPIO25 → R1 → LED → GND, no open ratsnest lines | ✅ |
 | LED polarity | long leg at the resistor, short leg at GND | ✅ (Fritzing) |
-| `python3 main.py` on the Pi | LED 1 s on, 2 s off | ⬜ tick on the Pi |
-| Press Ctrl+C | message "Beendet.", LED off | ⬜ tick on the Pi |
+| `python3 main.py` on the Pi | LED 1 s on, 2 s off | ✅ |
+| Press Ctrl+C | message "Beendet.", LED off | ✅ |
 
 ## Safety
 
