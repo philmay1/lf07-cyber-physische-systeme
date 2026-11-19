@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/badges/progress-en.svg" alt="2 of 11 done (projects and exercises)">
+  <img src="docs/badges/progress-en.svg" alt="2 of 12 done (projects and exercises)">
 </p>
 
 <p align="center">
@@ -174,6 +174,7 @@ Extra tasks from class and the Raspberry Pi Beginner's Guide. They are not part 
 | Day | Exercise | What it does | Key skills | Status |
 |:-:|---|---|---|:-:|
 | 03 | [Pedestrian crossing](uebungen/tag03-fussgaengerampel/) | Car and pedestrian lights with a request button and a ticking signal | Pull-up, debouncing, events, PNP transistor | ✅ |
+| 04 | [Dimming the traffic light](uebungen/tag04-ampel-dimmen/) | Lights the traffic light at three levels: red 100 %, yellow 60 %, green 20 % | PWM, duty cycle, PWMLED | 🟡 |
 
 <details>
 <summary><b>Planned MQTT topics</b> (draft, will change with project 03)</summary>
