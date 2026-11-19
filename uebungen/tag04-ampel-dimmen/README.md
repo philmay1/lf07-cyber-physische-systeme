@@ -2,6 +2,8 @@
 
 # Exercise day 4: dimming the traffic light with PWM
 
+![Breadboard](schaltplan/ampel-dimmen_steckplatine.png)
+
 The three car lights glow one after another, each dimmer than the one before: red at 100 %, yellow at 60 %, green at 20 %. Then all three light up together so the levels can be compared side by side.
 
 ## How dimming works
@@ -27,6 +29,10 @@ Same wiring as the car lights of the [pedestrian crossing](../tag03-fussgaengera
 | ground rail | GND | 20 | |
 
 Every LED has a 220 Ω series resistor. A step-by-step build guide with breadboard columns is in the [build guide (German)](ANBAULEITUNG.de.md).
+
+![Schematic](schaltplan/ampel-dimmen_schaltplan.png)
+
+Fritzing file: [schaltplan/ampel-dimmen.fzz](schaltplan/ampel-dimmen.fzz). Fritzing shows a Pi 4B, the Pi 400 has the same header.
 
 ## Run
 
@@ -61,5 +67,5 @@ Green at 20 % looks brighter than a fifth. The eye reacts more strongly to small
 | Test | Expected | Result |
 |---|---|---|
 | Simulation with gpiozero mock pins on the Pi | correct order and values, Ctrl+C exits cleanly | ✅ |
-| Hardware on the Pi | red bright, yellow dimmer, green clearly dimmer | ⬜ |
-| Ctrl+C | message "Beendet.", all lights off | ⬜ |
+| Hardware on the Pi | red bright, yellow dimmer, green clearly dimmer | ✅ |
+| Ctrl+C | message "Beendet.", all lights off | ✅ |

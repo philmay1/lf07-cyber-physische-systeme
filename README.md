@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/badges/progress-en.svg" alt="2 of 12 done (projects and exercises)">
+  <img src="docs/badges/progress-en.svg" alt="3 of 12 done (projects and exercises)">
 </p>
 
 <p align="center">
@@ -71,17 +71,18 @@ Ten projects in two weeks, from a single LED to SENTINEL: a networked system wit
 <tr>
 <td width="45%" valign="top">
 
-<img src="uebungen/tag03-fussgaengerampel/schaltplan/ampel_steckplatine.png" alt="Breadboard view of the pedestrian crossing with five LEDs, push button and buzzer">
+<img src="uebungen/tag04-ampel-dimmen/schaltplan/ampel-dimmen_steckplatine.png" alt="Breadboard view of the dimmed traffic light with three LEDs on GPIO25, GPIO8 and GPIO7">
 
 </td>
 <td width="55%" valign="top">
 
-**Recently finished, both built and tested on the Raspberry Pi 400**
+**Recently finished, all built and tested on the Raspberry Pi 400**
 
+- ✅ Exercise day 4: [Dimming the traffic light](uebungen/tag04-ampel-dimmen/). Red at 100 %, yellow at 60 %, green at 20 %, dimmed with PWM.
 - ✅ Exercise day 3: [Pedestrian crossing](uebungen/tag03-fussgaengerampel/). Traffic light for cars and pedestrians with a request button. A buzzer ticks during pedestrian green as a signal for blind people.
 - ✅ Project 01: [SENTINEL kickoff](projekte/01-sentinel-projektstart/). A status LED on GPIO25 blinks 1 s on, 2 s off.
 
-**What I learned:** the GPIO number and the pin number are two different things. Every LED needs a series resistor. A button needs a pull-up and debouncing, and a transistor switches the buzzer because the pin should not drive it alone.
+**What I learned:** the GPIO number and the pin number are two different things. Every LED needs a series resistor. A button needs a pull-up and debouncing, and a transistor switches the buzzer because the pin should not drive it alone. PWM can dim an LED even though the pin only knows on and off.
 
 **Next up:** Project 02 Local material station. A push button becomes an input, with pull-up and debouncing.
 
@@ -174,7 +175,7 @@ Extra tasks from class and the Raspberry Pi Beginner's Guide. They are not part 
 | Day | Exercise | What it does | Key skills | Status |
 |:-:|---|---|---|:-:|
 | 03 | [Pedestrian crossing](uebungen/tag03-fussgaengerampel/) | Car and pedestrian lights with a request button and a ticking signal | Pull-up, debouncing, events, PNP transistor | ✅ |
-| 04 | [Dimming the traffic light](uebungen/tag04-ampel-dimmen/) | Lights the traffic light at three levels: red 100 %, yellow 60 %, green 20 % | PWM, duty cycle, PWMLED | 🟡 |
+| 04 | [Dimming the traffic light](uebungen/tag04-ampel-dimmen/) | Lights the traffic light at three levels: red 100 %, yellow 60 %, green 20 % | PWM, duty cycle, PWMLED | ✅ |
 
 <details>
 <summary><b>Planned MQTT topics</b> (draft, will change with project 03)</summary>

@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" width="900" height="520" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <rect width="900" height="520" fill="#ffffff"/>
+  <text x="450" y="38" text-anchor="middle" font-size="22" font-weight="600" fill="#222">Ampel dimmen mit PWM: Schaltplan</text>
+
+  <!-- Pi-Block -->
+  <rect x="40" y="90" width="190" height="330" rx="10" fill="#f3f6f3" stroke="#2e7d32" stroke-width="2.5"/>
+  <text x="135" y="122" text-anchor="middle" font-size="17" font-weight="600" fill="#2e7d32">Raspberry Pi 400</text>
+  <text x="135" y="144" text-anchor="middle" font-size="13" fill="#555">40-Pin-Stiftleiste</text>
+
+  <g font-size="15" fill="#222">
+    <text x="58" y="190">Pin 22 · GPIO25</text>
+    <text x="58" y="270">Pin 24 · GPIO8</text>
+    <text x="58" y="350">Pin 26 · GPIO7</text>
+    <text x="58" y="405">Pin 20 · GND</text>
+  </g>
+
+  <!-- Drei Zweige -->
+  <g stroke="#222" stroke-width="2.5" fill="none">
+    <!-- rot -->
+    <line x1="230" y1="185" x2="330" y2="185"/>
+    <polyline points="330,185 340,173 355,197 370,173 385,197 400,173 415,197 425,185"/>
+    <line x1="425" y1="185" x2="520" y2="185"/>
+    <!-- gelb -->
+    <line x1="230" y1="265" x2="330" y2="265"/>
+    <polyline points="330,265 340,253 355,277 370,253 385,277 400,253 415,277 425,265"/>
+    <line x1="425" y1="265" x2="520" y2="265"/>
+    <!-- gruen -->
+    <line x1="230" y1="345" x2="330" y2="345"/>
+    <polyline points="330,345 340,333 355,357 370,333 385,357 400,333 415,357 425,345"/>
+    <line x1="425" y1="345" x2="520" y2="345"/>
+  </g>
+
+  <!-- LEDs als Dioden-Symbole -->
+  <g stroke-width="2.5">
+    <polygon points="520,170 520,200 550,185" fill="#e53935" stroke="#222"/>
+    <line x1="550" y1="168" x2="550" y2="202" stroke="#222"/>
+    <polygon points="520,250 520,280 550,265" fill="#fdd835" stroke="#222"/>
+    <line x1="550" y1="248" x2="550" y2="282" stroke="#222"/>
+    <polygon points="520,330 520,360 550,345" fill="#43a047" stroke="#222"/>
+    <line x1="550" y1="328" x2="550" y2="362" stroke="#222"/>
+  </g>
+  <!-- Lichtpfeile -->
+  <g stroke="#888" stroke-width="1.8" fill="none">
+    <path d="M538 162 l10 -14 M545 148 l3 0 l0 4"/>
+    <path d="M538 242 l10 -14 M545 228 l3 0 l0 4"/>
+    <path d="M538 322 l10 -14 M545 308 l3 0 l0 4"/>
+  </g>
+
+  <!-- Rueckweg GND -->
+  <g stroke="#222" stroke-width="2.5" fill="none">
+    <line x1="550" y1="185" x2="620" y2="185"/>
+    <line x1="550" y1="265" x2="620" y2="265"/>
+    <line x1="550" y1="345" x2="620" y2="345"/>
+    <line x1="620" y1="185" x2="620" y2="460"/>
+    <line x1="620" y1="460" x2="200" y2="460"/>
+    <line x1="200" y1="460" x2="200" y2="400"/>
+    <line x1="200" y1="400" x2="230" y2="400"/>
+  </g>
+  <g fill="#222"><circle cx="620" cy="265" r="4.5"/><circle cx="620" cy="345" r="4.5"/></g>
+
+  <!-- Beschriftung -->
+  <g font-size="14" fill="#444" text-anchor="middle">
+    <text x="377" y="165">R1 220 Ω</text>
+    <text x="377" y="245">R2 220 Ω</text>
+    <text x="377" y="325">R3 220 Ω</text>
+  </g>
+  <g font-size="15">
+    <text x="640" y="182" fill="#c62828" font-weight="600">LED rot</text>
+    <text x="640" y="201" fill="#444">PWM 100 % · led.value = 1.0</text>
+    <text x="640" y="262" fill="#b28704" font-weight="600">LED gelb</text>
+    <text x="640" y="281" fill="#444">PWM 60 % · led.value = 0.6</text>
+    <text x="640" y="342" fill="#2e7d32" font-weight="600">LED grün</text>
+    <text x="640" y="361" fill="#444">PWM 20 % · led.value = 0.2</text>
+  </g>
+  <text x="410" y="485" text-anchor="middle" font-size="14" fill="#444">gemeinsamer Rückweg: alle Kathoden (kurzes Bein) an GND, Pin 20</text>
+  <text x="450" y="508" text-anchor="middle" font-size="12.5" fill="#777">Anode (langes Bein) zeigt zum Widerstand · Strom je LED etwa 6 mA bei 100 %</text>
+</svg>

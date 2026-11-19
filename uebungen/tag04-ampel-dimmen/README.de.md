@@ -2,6 +2,8 @@
 
 # Übung Tag 4: Ampel dimmen mit PWM
 
+![Steckplatine](schaltplan/ampel-dimmen_steckplatine.png)
+
 Die drei Autolampen der Ampel leuchten nacheinander, jede schwächer als die davor: rot mit 100 %, gelb mit 60 %, grün mit 20 %. Danach leuchten alle drei zusammen, so dass man die Stufen direkt vergleichen kann.
 
 ## Wie das Dimmen funktioniert
@@ -27,6 +29,10 @@ Gleiche Verkabelung wie die Autoampel aus der [Fußgängerampel](../tag03-fussga
 | GND-Schiene | GND | 20 | |
 
 Jede LED hat einen Vorwiderstand von 220 Ω. Die Schritt-für-Schritt-Anleitung mit Steckbrett-Spalten steht in der [Anbauleitung](ANBAULEITUNG.de.md).
+
+![Schaltplan](schaltplan/ampel-dimmen_schaltplan.png)
+
+Fritzing-Datei: [schaltplan/ampel-dimmen.fzz](schaltplan/ampel-dimmen.fzz). Fritzing zeigt einen Pi 4B, der Pi 400 hat dieselbe Stiftleiste.
 
 ## Starten
 
@@ -61,5 +67,5 @@ Grün mit 20 % wirkt heller als ein Fünftel. Das Auge reagiert auf kleine Licht
 | Test | Erwartung | Ergebnis |
 |---|---|---|
 | Simulation mit gpiozero-Mock-Pins am Pi | richtige Reihenfolge und Werte, Strg+C beendet sauber | ✅ |
-| Aufbau am Pi | rot hell, gelb schwächer, grün deutlich schwächer | ⬜ |
-| Strg+C | Meldung "Beendet.", alle Lampen aus | ⬜ |
+| Aufbau am Pi | rot hell, gelb schwächer, grün deutlich schwächer | ✅ |
+| Strg+C | Meldung "Beendet.", alle Lampen aus | ✅ |

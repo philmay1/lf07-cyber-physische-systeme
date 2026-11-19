@@ -44,32 +44,40 @@ Pi herunterfahren und das USB-C-Kabel ziehen. Gesteckt wird nur ohne Strom. Ein 
 
 ### Schritt 4: Stecken
 
-So funktioniert das Steckbrett: Die fünf Löcher A bis E in einer Spalte sind innen miteinander verbunden. Was in Spalte 10 steckt, ist also elektrisch dasselbe, egal ob in Reihe A oder E. Die lange Lochreihe am Rand mit dem blauen Strich ist die Minus-Schiene. Alle Löcher darin sind verbunden. Dort sammeln wir GND, also den Rückweg für den Strom.
+So funktioniert das Steckbrett: Die fünf Löcher A bis E in einer Spalte sind innen miteinander verbunden. Was in Spalte 10 steckt, ist also elektrisch dasselbe, egal ob in Reihe A oder E. Die lange Lochreihe direkt unter Reihe A ist die Minus-Schiene. Alle Löcher darin sind verbunden. Dort sammeln wir GND, also den Rückweg für den Strom. Fritzing nennt diese Schiene X.
 
 Die vier Pins am Pi, die wir brauchen (20, 22, 24, 26), sitzen direkt nebeneinander in derselben Reihe der Stiftleiste. Wenn du unsicher bist, welcher Pin welcher ist: Im Terminal am Pi `pinout` eingeben, das zeigt eine Karte.
 
-Jede LED wird nach demselben Muster gesteckt: Kabel vom Pi, dann Widerstand, dann LED, dann zurück zur Minus-Schiene.
+Jede LED wird nach demselben Muster gesteckt: Kabel vom Pi, dann Widerstand, dann LED, dann zurück zur Minus-Schiene. So sieht das fertig aus:
+
+![Steckplatine aus Fritzing](schaltplan/ampel-dimmen_steckplatine.png)
+
+Und so als Schaltplan, mit allen drei Zweigen nebeneinander:
+
+![Schaltplan](schaltplan/ampel-dimmen_schaltplan.png)
+
+Die Fritzing-Datei liegt unter [schaltplan/ampel-dimmen.fzz](schaltplan/ampel-dimmen.fzz). Fritzing zeigt einen Pi 4B, der Pi 400 hat dieselbe Stiftleiste.
 
 | Nr. | Teil | Steckt von | nach |
 |---|---|---|---|
-| 1 | Kabel Buchse auf Stift, am besten schwarz | Pi Pin 20 (GND) | blaue Minus-Schiene |
-| 2 | Kabel Buchse auf Stift | Pi Pin 22 (GPIO25) | Spalte 10, Reihe A |
-| 3 | Widerstand 220 Ohm | Spalte 10, Reihe C | Spalte 14, Reihe C |
-| 4 | LED rot, langes Bein | Spalte 14, Reihe E | |
-| 5 | LED rot, kurzes Bein | Spalte 13, Reihe E | |
-| 6 | Kabel Stift auf Stift | Spalte 13, Reihe A | blaue Minus-Schiene |
-| 7 | Kabel Buchse auf Stift | Pi Pin 24 (GPIO8) | Spalte 20, Reihe A |
-| 8 | Widerstand 220 Ohm | Spalte 20, Reihe C | Spalte 24, Reihe C |
-| 9 | LED gelb, langes Bein | Spalte 24, Reihe E | |
-| 10 | LED gelb, kurzes Bein | Spalte 23, Reihe E | |
-| 11 | Kabel Stift auf Stift | Spalte 23, Reihe A | blaue Minus-Schiene |
-| 12 | Kabel Buchse auf Stift | Pi Pin 26 (GPIO7) | Spalte 30, Reihe A |
-| 13 | Widerstand 220 Ohm | Spalte 30, Reihe C | Spalte 34, Reihe C |
-| 14 | LED grün, langes Bein | Spalte 34, Reihe E | |
-| 15 | LED grün, kurzes Bein | Spalte 33, Reihe E | |
-| 16 | Kabel Stift auf Stift | Spalte 33, Reihe A | blaue Minus-Schiene |
+| 1 | Kabel Buchse auf Stift, am besten schwarz | Pi Pin 20 (GND) | Minus-Schiene, Spalte 28 |
+| 2 | Kabel Buchse auf Stift, am besten rot | Pi Pin 22 (GPIO25) | Spalte 31, Reihe A |
+| 3 | Widerstand 220 Ohm | Spalte 31, Reihe C | Spalte 35, Reihe C |
+| 4 | LED rot, langes Bein | Spalte 35, Reihe E | |
+| 5 | LED rot, kurzes Bein | Spalte 34, Reihe E | |
+| 6 | Kabel Stift auf Stift, schwarz | Spalte 34, Reihe A | Minus-Schiene |
+| 7 | Kabel Buchse auf Stift, am besten gelb | Pi Pin 24 (GPIO8) | Spalte 37, Reihe A |
+| 8 | Widerstand 220 Ohm | Spalte 37, Reihe C | Spalte 41, Reihe C |
+| 9 | LED gelb, langes Bein | Spalte 41, Reihe E | |
+| 10 | LED gelb, kurzes Bein | Spalte 40, Reihe E | |
+| 11 | Kabel Stift auf Stift, schwarz | Spalte 40, Reihe A | Minus-Schiene |
+| 12 | Kabel Buchse auf Stift, am besten grün | Pi Pin 26 (GPIO7) | Spalte 43, Reihe A |
+| 13 | Widerstand 220 Ohm | Spalte 43, Reihe C | Spalte 47, Reihe C |
+| 14 | LED grün, langes Bein | Spalte 47, Reihe E | |
+| 15 | LED grün, kurzes Bein | Spalte 46, Reihe E | |
+| 16 | Kabel Stift auf Stift, schwarz | Spalte 46, Reihe A | Minus-Schiene |
 
-Der Strom läuft bei rot so: Pin 22, Kabel, Spalte 10, Widerstand, Spalte 14, LED, Spalte 13, Kabel, Minus-Schiene, Pin 20. Bei gelb und grün ist es genauso, nur 10 und 20 Spalten weiter rechts.
+Der Strom läuft bei rot so: Pin 22, Kabel, Spalte 31, Widerstand, Spalte 35, LED, Spalte 34, Kabel, Minus-Schiene, Pin 20. Bei gelb und grün ist es genauso, nur 6 und 12 Spalten weiter rechts. Das sind genau die Spalten der Autoampel von Tag 3.
 
 Beim Widerstand ist die Richtung egal. Bei der LED nicht: Das lange Bein gehört immer zum Widerstand, das kurze zur Minus-Seite. Steckt die LED falsch herum, bleibt sie einfach dunkel. Kaputt geht dabei nichts.
 
@@ -77,11 +85,11 @@ Beim Widerstand ist die Richtung egal. Bei der LED nicht: Das lange Bein gehört
 
 | Prüfpunkt | Erledigt |
 |---|---|
-| Schwarzes Kabel von Pin 20 steckt in der blauen Minus-Schiene | ⬜ |
-| Rot an Pin 22, gelb an Pin 24, grün an Pin 26 | ⬜ |
-| Kein Kabel an Pin 2 oder Pin 4, dort liegen 5 V | ⬜ |
-| Bei jeder LED steckt das lange Bein in derselben Spalte wie der Widerstand | ⬜ |
-| Alle drei Widerstände haben die Ringe rot, rot, schwarz, schwarz, braun | ⬜ |
+| Schwarzes Kabel von Pin 20 steckt in der Minus-Schiene unter Reihe A | ✅ |
+| Rot an Pin 22, gelb an Pin 24, grün an Pin 26 | ✅ |
+| Kein Kabel an Pin 2 oder Pin 4, dort liegen 5 V | ✅ |
+| Bei jeder LED steckt das lange Bein in derselben Spalte wie der Widerstand | ✅ |
+| Alle drei Widerstände haben die Ringe rot, rot, schwarz, schwarz, braun | ✅ |
 
 ### Schritt 6: Programm starten
 

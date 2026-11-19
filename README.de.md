@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/badges/progress-de.svg" alt="2 von 12 erledigt (Projekte und Übungen)">
+  <img src="docs/badges/progress-de.svg" alt="3 von 12 erledigt (Projekte und Übungen)">
 </p>
 
 <p align="center">
@@ -71,17 +71,18 @@ Zehn Projekte in zwei Wochen, von einer einzelnen LED bis zu SENTINEL: ein verne
 <tr>
 <td width="45%" valign="top">
 
-<img src="uebungen/tag03-fussgaengerampel/schaltplan/ampel_steckplatine.png" alt="Steckplatine der Fußgängerampel mit fünf LEDs, Taster und Summer">
+<img src="uebungen/tag04-ampel-dimmen/schaltplan/ampel-dimmen_steckplatine.png" alt="Steckplatine der gedimmten Ampel mit drei LEDs an GPIO25, GPIO8 und GPIO7">
 
 </td>
 <td width="55%" valign="top">
 
-**Zuletzt fertig, beides am Raspberry Pi 400 aufgebaut und getestet**
+**Zuletzt fertig, alles am Raspberry Pi 400 aufgebaut und getestet**
 
+- ✅ Übung Tag 4: [Ampel dimmen](uebungen/tag04-ampel-dimmen/). Rot leuchtet mit 100 %, gelb mit 60 %, grün mit 20 %. Gedimmt wird per PWM.
 - ✅ Übung Tag 3: [Fußgängerampel](uebungen/tag03-fussgaengerampel/). Auto- und Fußgängerampel mit Anforderungstaster. Ein Summer tickt während Fußgänger-Grün als Signal für blinde Menschen.
 - ✅ Projekt 01: [SENTINEL Projektstart](projekte/01-sentinel-projektstart/). Eine Status-LED an GPIO25 blinkt 1 s an, 2 s aus.
 
-**Was ich dabei gelernt habe:** GPIO-Nummer und Pinnummer sind zwei verschiedene Dinge. Jede LED braucht einen Vorwiderstand. Ein Taster braucht einen Pull-up und Entprellen, und den Summer schaltet ein Transistor, weil der Pin ihn nicht allein treiben sollte.
+**Was ich dabei gelernt habe:** GPIO-Nummer und Pinnummer sind zwei verschiedene Dinge. Jede LED braucht einen Vorwiderstand. Ein Taster braucht einen Pull-up und Entprellen, und den Summer schaltet ein Transistor, weil der Pin ihn nicht allein treiben sollte. Mit PWM lässt sich eine LED dimmen, obwohl der Pin nur an oder aus kennt.
 
 **Als Nächstes:** Projekt 02 Lokale Materialstation. Ein Taster wird zum Eingang, mit Pull-up und Entprellen.
 
@@ -175,7 +176,7 @@ Zusätzliche Aufgaben aus dem Unterricht und dem Raspberry-Pi-Handbuch. Sie geh�
 | Tag | Übung | Was sie macht | Schwerpunkt | Status |
 |:-:|---|---|---|:-:|
 | 03 | [Fußgängerampel](uebungen/tag03-fussgaengerampel/) | Auto- und Fußgängerampel mit Anforderungstaster und Ticksignal | Pull-up, Entprellen, Event, PNP-Transistor | ✅ |
-| 04 | [Ampel dimmen](uebungen/tag04-ampel-dimmen/) | Lässt die Ampel in drei Stufen leuchten: rot 100 %, gelb 60 %, grün 20 % | PWM, Tastgrad, PWMLED | 🟡 |
+| 04 | [Ampel dimmen](uebungen/tag04-ampel-dimmen/) | Lässt die Ampel in drei Stufen leuchten: rot 100 %, gelb 60 %, grün 20 % | PWM, Tastgrad, PWMLED | ✅ |
 
 <details>
 <summary><b>Geplante MQTT-Topics</b> (Entwurf, ändert sich mit Projekt 03)</summary>
