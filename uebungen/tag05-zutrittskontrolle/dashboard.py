@@ -7,101 +7,83 @@ Aufruf im Browser: http://<IP-des-Pi>:5000  (im Heimnetz oder über Tailscale, a
 Zeigt live den Zustand (bereit / gesperrt mit Countdown), die Fehlversuche und das
 Protokoll. Ein Admin kann mit seiner PIN die Sperre aus der Ferne aufheben.
 Das Dashboard liest dieselbe zutritt.db wie das Keypad-Programm.
+Die Webseite selbst steht in dashboard.html.
 """
+# Der Docstring oben wird nicht ausgeführt. Er erklärt Start und Zweck.
+
+# time wandelt Unix-Zeit in Uhrzeit um und kann kurz warten.
 import time
 
+# Path findet die Datei dashboard.html im selben Ordner.
+from pathlib import Path
+
+# Flask ist ein kleiner Webserver. jsonify macht aus Python-Daten JSON für den Browser,
+# request enthält die Daten, die der Browser schickt.
 from flask import Flask, jsonify, request
 
+# Unsere Datenbank-Datei zutritt_db.py, hier kurz "db".
 import zutritt_db as db
 
+# Die Web-Anwendung anlegen.
 app = Flask(__name__)
 
+# Pfad zur Webseite (dashboard.html neben dieser Datei).
+SEITE = Path(__file__).with_name("dashboard.html")
 
-@app.route("/api/status")   # Flask 1.1 auf dem Pi kennt noch kein @app.get
+
+# Adresse /api/status: liefert den aktuellen Zustand als JSON. Der Browser fragt das jede Sekunde ab.
+# Flask 1.1 auf dem Pi kennt noch kein @app.get, deshalb @app.route.
+@app.route("/api/status")
 def api_status():
+    # Pro Anfrage eine eigene Verbindung öffnen.
     con = db.verbinden()
+    # Sperr-Zustand holen (gesperrt, rest, fehlversuche, sperr_stufe).
     s = db.status(con)
+    # Die Grenze mitschicken, damit die Seite die richtige Zahl Punkte zeichnet.
     s["max"] = db.MAX_FEHLVERSUCHE
+    # Die letzten 12 Versuche als Liste anhängen, jeweils mit lesbarer Uhrzeit.
     s["versuche"] = [{
-        "zeit": time.strftime("%H:%M:%S", time.localtime(v["zeit"])),
-        "erfolg": bool(v["erfolg"]),
-        "name": v["name"] or "",
+        "zeit": time.strftime("%H:%M:%S", time.localtime(v["zeit"])),  # z. B. 09:25:45
+        "erfolg": bool(v["erfolg"]),                                     # True oder False
+        "name": v["name"] or "",                                         # leer bei falscher PIN
         "hinweis": v["hinweis"] or ""} for v in db.letzte_versuche(con, 12)]
+    # Alles als JSON an den Browser zurückgeben.
     return jsonify(s)
 
 
+# Adresse /api/entsperren: nimmt eine Admin-PIN entgegen (nur POST, also nicht per Link aufrufbar).
 @app.route("/api/entsperren", methods=["POST"])
 def api_entsperren():
+    # Eigene Datenbank-Verbindung.
     con = db.verbinden()
+    # Die PIN aus den JSON-Daten des Browsers lesen. Fehlt sie, wird es ein leerer Text.
     pin = str((request.get_json(silent=True) or {}).get("pin", ""))
+    # Nur Ziffern prüfen. Passt die PIN zu einem Benutzer, steht er danach in b.
     b = db.pin_pruefen(con, pin) if pin.isdigit() else None
+    # Kein Benutzer oder kein Admin?
     if not b or b["rolle"] != "admin":
+        # Den Versuch ins Protokoll schreiben, damit man Angriffe sieht.
         with con:
             con.execute("INSERT INTO versuche (zeit, erfolg, hinweis) VALUES (?, 0, ?)",
                         (time.time(), "Dashboard: falsche Admin-PIN"))
-        time.sleep(1)                                  # bremst Durchprobieren
+        # 1 Sekunde warten: bremst automatisches Durchprobieren stark aus.
+        time.sleep(1)
+        # Antwort mit HTTP-Status 403 (verboten).
         return jsonify(ok=False, meldung="Admin-PIN falsch"), 403
+    # Admin erkannt: Sperre aufheben und seinen Namen ins Protokoll schreiben.
     db.entsperren(con, f"{b['name']} (Dashboard)")
+    # Erfolg melden.
     return jsonify(ok=True, meldung="Entsperrt")
 
 
+# Startseite /: liefert die Webseite aus dashboard.html.
 @app.route("/")
 def seite():
-    return SEITE
+    # Datei als Text lesen und an den Browser schicken.
+    return SEITE.read_text(encoding="utf-8")
 
 
-SEITE = """<!doctype html>
-<html lang="de"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SENTINEL Zutritt</title>
-<style>
-:root{--bg:#0f1115;--karte:#181b22;--text:#e8eaf0;--leise:#8a90a0;--gruen:#2fbf71;--rot:#e5484d;--gelb:#f5b83d}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,sans-serif;padding:16px}
-main{max-width:720px;margin:0 auto;display:grid;gap:16px}
-h1{font-size:15px;letter-spacing:.12em;color:var(--leise);margin:4px 0 0;font-weight:600}
-.karte{background:var(--karte);border-radius:16px;padding:20px}
-#zustand{display:flex;align-items:center;gap:20px}
-#ring{width:110px;height:110px;border-radius:50%;display:grid;place-items:center;font-size:44px;
- border:6px solid var(--gruen);transition:border-color .3s,box-shadow .3s;flex:none}
-.gesperrt #ring{border-color:var(--rot);box-shadow:0 0 40px #e5484d55;animation:puls 1s infinite alternate}
-@keyframes puls{to{box-shadow:0 0 10px #e5484d22}}
-#titel{font-size:28px;font-weight:700}#unter{color:var(--leise)}
-.punkte{display:flex;gap:8px;margin-top:10px}.punkt{width:14px;height:14px;border-radius:50%;background:#2a2f3a}
-.punkt.an{background:var(--gelb)}
-table{width:100%;border-collapse:collapse;font-size:14px}td{padding:7px 4px;border-top:1px solid #252a33}
-td:first-child{color:var(--leise);font-variant-numeric:tabular-nums;width:80px}
-.ok{color:var(--gruen)}.fehler{color:var(--rot)}
-form{display:flex;gap:8px}input{flex:1;min-width:0;background:#0f1115;border:1px solid #2a2f3a;color:var(--text);
- border-radius:10px;padding:10px;font-size:16px}button{background:var(--gruen);border:0;border-radius:10px;padding:10px 16px;
- font-weight:700;color:#06210f;cursor:pointer}#meldung{color:var(--leise);font-size:14px;margin-top:8px;min-height:1em}
-</style></head><body><main>
-<h1>SENTINEL · ZUTRITTSKONTROLLE</h1>
-<section class="karte" id="zustand"><div id="ring">🔓</div>
- <div><div id="titel">Bereit</div><div id="unter">PIN am Keypad eingeben</div>
- <div class="punkte" id="punkte"></div></div></section>
-<section class="karte"><table id="log"></table></section>
-<section class="karte"><form id="frm"><input id="pin" type="password" inputmode="numeric"
- autocomplete="off" placeholder="Admin-PIN zum Entsperren"><button>Entsperren</button></form>
- <div id="meldung"></div></section>
-</main><script>
-const $=id=>document.getElementById(id);
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
-async function laden(){
- try{const s=await (await fetch('/api/status')).json();
-  document.body.classList.toggle('gesperrt',s.gesperrt);
-  $('ring').textContent=s.gesperrt?'🔒':'🔓';
-  if(s.gesperrt){const r=Math.ceil(s.rest);$('titel').textContent='GESPERRT';
-   $('unter').textContent='noch '+Math.floor(r/60)+':'+String(r%60).padStart(2,'0')+' min · Sperrstufe '+s.sperr_stufe}
-  else{$('titel').textContent='Bereit';$('unter').textContent='PIN am Keypad eingeben'}
-  $('punkte').innerHTML=Array.from({length:s.max},(_,i)=>'<span class="punkt'+(i<s.fehlversuche?' an':'')+'"></span>').join('');
-  $('log').innerHTML=s.versuche.map(v=>'<tr><td>'+v.zeit+'</td><td class="'+(v.erfolg?'ok':'fehler')+'">'+
-   (v.erfolg?'✔':'✖')+'</td><td>'+esc(v.name)+'</td><td>'+esc(v.hinweis)+'</td></tr>').join('')||'<tr><td>Noch keine Versuche</td></tr>';
- }catch(e){$('unter').textContent='keine Verbindung zum Pi'}}
-$('frm').onsubmit=async e=>{e.preventDefault();
- const r=await fetch('/api/entsperren',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:$('pin').value})});
- $('meldung').textContent=(await r.json()).meldung;$('pin').value='';laden()};
-laden();setInterval(laden,1000);
-</script></body></html>"""
-
+# Nur beim direkten Start den Webserver starten.
 if __name__ == "__main__":
+    # host="0.0.0.0": erreichbar von anderen Geräten im Netz, nicht nur vom Pi selbst. Port 5000.
     app.run(host="0.0.0.0", port=5000)

@@ -33,10 +33,10 @@ Fritzing file: [schaltplan/05-zutritt.fzz](schaltplan/05-zutritt.fzz). The keypa
 
 ```bash
 cd ~/lf07-cyber-physische-systeme/uebungen/tag05-zutrittskontrolle
-python3 test_zutritt.py            # 17 checks with simulated pins, no hardware needed
+python3 test_zutritt.py            # 18 checks with simulated pins, no hardware needed
 python3 verwalten.py neu Phil      # add a user, PIN is asked hidden
 python3 verwalten.py neu Admin --admin
-python3 zutritt.py --tastatur      # type the PIN over SSH, LEDs and buzzer are real
+python3 zutritt.py --tastatur      # no keypad? the keyboard acts as keypad: digits, Enter = #, Backspace = *
 python3 zutritt.py --tasten-test   # check the keypad wiring key by key
 python3 dashboard.py               # live dashboard on http://<pi-ip>:5000
 python3 zutritt.py                 # the real thing

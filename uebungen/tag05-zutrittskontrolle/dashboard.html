@@ -1,0 +1,138 @@
+<!doctype html>                                                   <!-- HTML5-Dokument -->
+<html lang="de">                                                  <!-- Sprache Deutsch -->
+<head>
+  <meta charset="utf-8">                                          <!-- Umlaute richtig anzeigen -->
+  <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- passt sich ans Handy an -->
+  <title>SENTINEL Zutritt</title>                                 <!-- Text im Browser-Tab -->
+  <style>
+    /* Farben einmal festlegen, dann überall per var(--name) benutzen */
+    :root {
+      --bg: #0f1115;      /* Hintergrund fast schwarz */
+      --karte: #181b22;   /* Hintergrund der Karten */
+      --text: #e8eaf0;    /* normale Schrift */
+      --leise: #8a90a0;   /* graue Nebenschrift */
+      --gruen: #2fbf71;   /* bereit / Erfolg */
+      --rot: #e5484d;     /* gesperrt / Fehler */
+      --gelb: #f5b83d;    /* Fehlversuch-Punkte */
+    }
+    * { box-sizing: border-box; }                                /* Rahmen zählen zur Breite */
+    body { margin: 0; background: var(--bg); color: var(--text);  /* dunkle Seite, helle Schrift */
+           font: 16px/1.4 system-ui, sans-serif; padding: 16px; }  /* Systemschrift, Rand am Handy */
+    main { max-width: 720px; margin: 0 auto; display: grid; gap: 16px; } /* mittig, Karten untereinander */
+    h1 { font-size: 15px; letter-spacing: .12em; color: var(--leise); margin: 4px 0 0; font-weight: 600; } /* kleine Überschrift */
+    .karte { background: var(--karte); border-radius: 16px; padding: 20px; } /* abgerundete Kästen */
+    #zustand { display: flex; align-items: center; gap: 20px; }   /* Ring links, Text rechts */
+    #ring { width: 110px; height: 110px; border-radius: 50%;      /* runder Kreis */
+            display: grid; place-items: center; font-size: 44px; /* Schloss-Symbol mittig */
+            border: 6px solid var(--gruen); flex: none;           /* grüner Rand = bereit */
+            transition: border-color .3s, box-shadow .3s; }       /* sanfter Farbwechsel */
+    .gesperrt #ring { border-color: var(--rot);                   /* bei Sperre roter Rand */
+                      box-shadow: 0 0 40px #e5484d55;             /* rotes Leuchten */
+                      animation: puls 1s infinite alternate; }    /* Leuchten pulsiert */
+    @keyframes puls { to { box-shadow: 0 0 10px #e5484d22; } }    /* Pulsieren: Leuchten wird schwächer */
+    #titel { font-size: 28px; font-weight: 700; }                 /* "Bereit" oder "GESPERRT" groß */
+    #unter { color: var(--leise); }                               /* Zeile darunter grau */
+    .punkte { display: flex; gap: 8px; margin-top: 10px; }        /* Fehlerpunkte nebeneinander */
+    .punkt { width: 14px; height: 14px; border-radius: 50%; background: #2a2f3a; } /* grauer Punkt */
+    .punkt.an { background: var(--gelb); }                        /* gelber Punkt = ein Fehlversuch */
+    table { width: 100%; border-collapse: collapse; font-size: 14px; } /* Protokoll-Tabelle */
+    td { padding: 7px 4px; border-top: 1px solid #252a33; }       /* Linie zwischen den Zeilen */
+    td:first-child { color: var(--leise); width: 80px;            /* Uhrzeit-Spalte grau */
+                     font-variant-numeric: tabular-nums; }        /* Ziffern gleich breit */
+    .ok { color: var(--gruen); }                                  /* Haken grün */
+    .fehler { color: var(--rot); }                                /* Kreuz rot */
+    form { display: flex; gap: 8px; }                             /* Feld und Knopf nebeneinander */
+    input { flex: 1; min-width: 0; background: var(--bg); color: var(--text); /* Eingabefeld füllt die Breite */
+            border: 1px solid #2a2f3a; border-radius: 10px; padding: 10px; font-size: 16px; }
+    button { background: var(--gruen); color: #06210f; border: 0; border-radius: 10px; /* grüner Knopf */
+             padding: 10px 16px; font-weight: 700; cursor: pointer; }
+    #meldung { color: var(--leise); font-size: 14px; margin-top: 8px; min-height: 1em; } /* Rückmeldung */
+  </style>
+</head>
+<body>
+<main>
+  <h1>SENTINEL · ZUTRITTSKONTROLLE</h1>                           <!-- Überschrift -->
+  <section class="karte" id="zustand">                            <!-- Karte 1: Zustand -->
+    <div id="ring">🔓</div>                                        <!-- Kreis mit Schloss -->
+    <div>
+      <div id="titel">Bereit</div>                                <!-- großer Zustandstext -->
+      <div id="unter">PIN am Keypad eingeben</div>                <!-- Hinweis oder Countdown -->
+      <div class="punkte" id="punkte"></div>                      <!-- hier entstehen die Fehlerpunkte -->
+    </div>
+  </section>
+  <section class="karte"><table id="log"></table></section>       <!-- Karte 2: Protokoll -->
+  <section class="karte">                                         <!-- Karte 3: Admin-Entsperren -->
+    <form id="frm">
+      <input id="pin" type="password" inputmode="numeric"
+             autocomplete="off" placeholder="Admin-PIN zum Entsperren"> <!-- PIN-Feld, Ziffernblock am Handy -->
+      <button>Entsperren</button>                                 <!-- schickt das Formular ab -->
+    </form>
+    <div id="meldung"></div>                                      <!-- "Entsperrt" oder "Admin-PIN falsch" -->
+  </section>
+</main>
+<script>
+// Kurzform: $('titel') statt document.getElementById('titel')
+const $ = id => document.getElementById(id);
+// Macht Text sicher für HTML: aus < wird &lt; usw., damit kein fremder Code ausgeführt wird
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'})[c]);
+
+// Holt den Zustand vom Pi und malt die Seite neu
+async function laden() {
+  try {
+    // Anfrage an /api/status, Antwort als JSON lesen
+    const s = await (await fetch('/api/status')).json();
+    // Klasse "gesperrt" an den body hängen oder entfernen (färbt den Ring rot)
+    document.body.classList.toggle('gesperrt', s.gesperrt);
+    // Geschlossenes oder offenes Schloss
+    $('ring').textContent = s.gesperrt ? '🔒' : '🔓';
+    if (s.gesperrt) {
+      // Restzeit auf ganze Sekunden aufrunden
+      const r = Math.ceil(s.rest);
+      // Großer Text
+      $('titel').textContent = 'GESPERRT';
+      // Countdown als Minuten:Sekunden, Sekunden immer zweistellig
+      $('unter').textContent = 'noch ' + Math.floor(r / 60) + ':' + String(r % 60).padStart(2, '0') + ' min · Sperrstufe ' + s.sperr_stufe;
+    } else {
+      // Nicht gesperrt: Normalzustand anzeigen
+      $('titel').textContent = 'Bereit';
+      $('unter').textContent = 'PIN am Keypad eingeben';
+    }
+    // So viele Punkte wie erlaubte Fehlversuche, die bisherigen Fehler gelb
+    $('punkte').innerHTML = Array.from({length: s.max}, (_, i) =>
+      '<span class="punkt' + (i < s.fehlversuche ? ' an' : '') + '"></span>').join('');
+    // Protokoll: eine Tabellenzeile pro Versuch mit Uhrzeit, Haken/Kreuz, Name, Hinweis
+    $('log').innerHTML = s.versuche.map(v =>
+      '<tr><td>' + v.zeit + '</td><td class="' + (v.erfolg ? 'ok' : 'fehler') + '">' +
+      (v.erfolg ? '✔' : '✖') + '</td><td>' + esc(v.name) + '</td><td>' + esc(v.hinweis) + '</td></tr>'
+    ).join('') || '<tr><td>Noch keine Versuche</td></tr>';
+  } catch (e) {
+    // Pi nicht erreichbar (Dashboard aus, WLAN weg)
+    $('unter').textContent = 'keine Verbindung zum Pi';
+  }
+}
+
+// Was passiert, wenn der Knopf "Entsperren" gedrückt wird
+$('frm').onsubmit = async e => {
+  // Verhindert, dass der Browser die Seite neu lädt
+  e.preventDefault();
+  // Die PIN als JSON an /api/entsperren schicken
+  const r = await fetch('/api/entsperren', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({pin: $('pin').value})
+  });
+  // Antwort des Pi unter dem Feld anzeigen
+  $('meldung').textContent = (await r.json()).meldung;
+  // Feld leeren, damit die PIN nicht stehen bleibt
+  $('pin').value = '';
+  // Sofort neu laden, damit man das Ergebnis direkt sieht
+  laden();
+};
+
+// Einmal sofort laden ...
+laden();
+// ... und danach jede Sekunde (1000 ms) wieder
+setInterval(laden, 1000);
+</script>
+</body>
+</html>

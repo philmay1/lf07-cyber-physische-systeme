@@ -62,7 +62,7 @@ cd ~/lf07-cyber-physische-systeme/uebungen/tag05-zutrittskontrolle
 python3 test_zutritt.py
 ```
 
-Der Test nutzt simulierte Pins und eine eigene Test-Datenbank. Er prüft 17 Punkte, unter anderem: richtige PIN öffnet, dritte falsche PIN sperrt, Sperre übersteht einen Neustart, zweite Sperre ist doppelt so lang, Admin entsperrt per Dashboard, PIN steht nicht im Klartext in der Datei. Am Ende muss „Alle Tests bestanden.“ stehen.
+Der Test nutzt simulierte Pins und eine eigene Test-Datenbank. Er prüft 18 Punkte, unter anderem: richtige PIN öffnet, dritte falsche PIN sperrt, Sperre übersteht einen Neustart, zweite Sperre ist doppelt so lang, Admin entsperrt per Dashboard, PIN steht nicht im Klartext in der Datei. Am Ende muss „Alle Tests bestanden.“ stehen.
 
 ### Stufe 2: Benutzer anlegen
 
@@ -74,13 +74,22 @@ python3 verwalten.py liste
 
 Die PIN wird verdeckt abgefragt (4 bis 8 Ziffern). Der Admin braucht eine eigene PIN, mit der er im Dashboard entsperren kann.
 
-### Stufe 3: ohne Keypad, nur mit der Ampel
+### Stufe 3: ohne Keypad, die Tastatur wird zum Keypad
 
 ```bash
 python3 zutritt.py --tastatur
 ```
 
-Die PIN wird über die PC-Tastatur in der SSH-Sitzung eingegeben, zum Beispiel `2468#` und Enter. LEDs und Summer an der Ampel reagieren echt. So lässt sich die ganze Logik prüfen, bevor ein einziges Keypad-Kabel steckt.
+Ohne Keypad übernimmt die Tastatur seine Rolle. Das klappt mit der Tastatur des Pi 400 selbst (Terminal am Pi oder über VNC) und genauso mit dem Notebook über SSH. Jede Taste wirkt sofort wie ein Druck auf das Keypad, Enter gibt es nicht extra:
+
+| Tastatur | wirkt wie Keypad |
+|---|---|
+| Ziffern 0 bis 9 | Ziffern |
+| Enter oder `#` | `#` (bestätigen) |
+| Rücktaste oder `*` | `*` (löschen) |
+| A bis D | A bis D (ohne Funktion) |
+
+LEDs und Summer an der Ampel reagieren dabei echt, und das Dashboard zeigt alles live. Damit lässt sich die ganze Zutrittskontrolle vorführen, ohne dass ein Keypad angeschlossen ist. Kommt das Keypad dazu, ändert sich am Programm nichts, man startet es nur ohne `--tastatur`.
 
 ### Stufe 4: Keypad-Verkabelung prüfen
 
@@ -97,11 +106,11 @@ Zwei SSH-Fenster öffnen.
 ```bash
 # Fenster 1
 python3 dashboard.py
-# Fenster 2
+# Fenster 2 (mit Keypad; ohne Keypad: python3 zutritt.py --tastatur)
 python3 zutritt.py
 ```
 
-Im Browser `http://<IP-des-Pi>:5000` öffnen, im Heimnetz oder über Tailscale, auch am Handy. Dann am Keypad testen:
+Im Browser `http://<IP-des-Pi>:5000` öffnen, im Heimnetz oder über Tailscale, auch am Handy. Dann am Keypad (oder an der Tastatur) testen:
 
 | Nr. | Aktion | Erwartet | Ergebnis |
 |:-:|---|---|:-:|
@@ -121,10 +130,13 @@ Im Browser `http://<IP-des-Pi>:5000` öffnen, im Heimnetz oder über Tailscale, 
 | `zutritt.py` | Keypad lesen, PIN prüfen, LEDs und Summer steuern |
 | `zutritt_db.py` | alles rund um die Datenbank: Tabellen, Hash, Sperre, Protokoll |
 | `dashboard.py` | Live-Dashboard mit Flask auf Port 5000 |
+| `dashboard.html` | die Webseite des Dashboards (HTML, CSS, JavaScript) |
 | `verwalten.py` | Benutzer anlegen, Protokoll, Status, entsperren |
 | `test_zutritt.py` | automatischer Test mit simulierten Pins |
 
 Die Datenbank `zutritt.db` entsteht beim ersten Start im selben Ordner. Sie steht in `.gitignore` und landet nicht auf GitHub, weil sie die PIN-Hashes enthält.
+
+Jede Code-Zeile hat einen deutschen Kommentar, der erklärt, was sie tut.
 
 ## Grenzen
 
