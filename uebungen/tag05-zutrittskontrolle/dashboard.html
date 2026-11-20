@@ -5,134 +5,363 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- passt sich ans Handy an -->
   <title>SENTINEL Zutritt</title>                                 <!-- Text im Browser-Tab -->
   <style>
-    /* Farben einmal festlegen, dann überall per var(--name) benutzen */
+    /* ===== Farben: einmal festlegen, dann überall per var(--name) benutzen ===== */
     :root {
-      --bg: #0f1115;      /* Hintergrund fast schwarz */
-      --karte: #181b22;   /* Hintergrund der Karten */
+      --bg: #0b0d12;      /* Hintergrund fast schwarz */
+      --karte: #151922;   /* Hintergrund der Karten */
+      --linie: #232936;   /* feine Trennlinien */
       --text: #e8eaf0;    /* normale Schrift */
       --leise: #8a90a0;   /* graue Nebenschrift */
       --gruen: #2fbf71;   /* bereit / Erfolg */
-      --rot: #e5484d;     /* gesperrt / Fehler */
-      --gelb: #f5b83d;    /* Fehlversuch-Punkte */
+      --rot: #ff3b45;     /* Alarm / Fehler */
+      --gelb: #f5b83d;    /* Fehlversuch */
     }
     * { box-sizing: border-box; }                                /* Rahmen zählen zur Breite */
+    html, body { height: 100%; }                                  /* Seite füllt das Fenster */
     body { margin: 0; background: var(--bg); color: var(--text);  /* dunkle Seite, helle Schrift */
-           font: 16px/1.4 system-ui, sans-serif; padding: 16px; }  /* Systemschrift, Rand am Handy */
-    main { max-width: 720px; margin: 0 auto; display: grid; gap: 16px; } /* mittig, Karten untereinander */
-    h1 { font-size: 15px; letter-spacing: .12em; color: var(--leise); margin: 4px 0 0; font-weight: 600; } /* kleine Überschrift */
-    .karte { background: var(--karte); border-radius: 16px; padding: 20px; } /* abgerundete Kästen */
-    #zustand { display: flex; align-items: center; gap: 20px; }   /* Ring links, Text rechts */
-    #ring { width: 110px; height: 110px; border-radius: 50%;      /* runder Kreis */
-            display: grid; place-items: center; font-size: 44px; /* Schloss-Symbol mittig */
-            border: 6px solid var(--gruen); flex: none;           /* grüner Rand = bereit */
-            transition: border-color .3s, box-shadow .3s; }       /* sanfter Farbwechsel */
-    .gesperrt #ring { border-color: var(--rot);                   /* bei Sperre roter Rand */
-                      box-shadow: 0 0 40px #e5484d55;             /* rotes Leuchten */
-                      animation: puls 1s infinite alternate; }    /* Leuchten pulsiert */
-    @keyframes puls { to { box-shadow: 0 0 10px #e5484d22; } }    /* Pulsieren: Leuchten wird schwächer */
-    #titel { font-size: 28px; font-weight: 700; }                 /* "Bereit" oder "GESPERRT" groß */
+           font: 16px/1.4 system-ui, sans-serif; padding: 16px; overflow-x: hidden; } /* kein Querscrollen */
+    main { max-width: 760px; margin: 0 auto; display: grid; gap: 16px; } /* mittig, Karten untereinander */
+    .mono { font-family: ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums; } /* gleich breite Ziffern */
+
+    /* ===== Kopfzeile ===== */
+    header { display: flex; align-items: center; gap: 12px; }     /* Titel, Uhr, Ton-Knopf in einer Reihe */
+    header h1 { font-size: 14px; letter-spacing: .14em; color: var(--leise); margin: 0; flex: 1; font-weight: 600; } /* Titel nimmt den Platz */
+    #uhr { color: var(--leise); font-size: 14px; }                /* Live-Uhr */
+    #ton { background: transparent; color: var(--text); border: 1px solid var(--linie); /* Ton-Knopf mit Rahmen */
+           border-radius: 999px; padding: 6px 12px; cursor: pointer; font-size: 14px; }
+    #ton.aus { animation: lockruf 1.6s infinite; }                 /* solange aus: Knopf pulsiert als Erinnerung */
+    @keyframes lockruf { 50% { border-color: var(--gelb); color: var(--gelb); } } /* Pulsieren in Gelb */
+
+    /* ===== Karten ===== */
+    .karte { background: var(--karte); border-radius: 16px; padding: 20px; border: 1px solid var(--linie); } /* abgerundete Kästen */
+    #zustand { display: flex; align-items: center; gap: 22px; }   /* Ring links, Text rechts */
+    #ring { width: 110px; height: 110px; border-radius: 50%; flex: none; /* runder Kreis */
+            display: grid; place-items: center; font-size: 44px;  /* Schloss-Symbol mittig */
+            border: 6px solid var(--gruen); box-shadow: 0 0 30px #2fbf7133; } /* grüner Rand = bereit */
+    #titel { font-size: 30px; font-weight: 800; letter-spacing: .02em; } /* "Bereit" groß */
     #unter { color: var(--leise); }                               /* Zeile darunter grau */
-    .punkte { display: flex; gap: 8px; margin-top: 10px; }        /* Fehlerpunkte nebeneinander */
-    .punkt { width: 14px; height: 14px; border-radius: 50%; background: #2a2f3a; } /* grauer Punkt */
-    .punkt.an { background: var(--gelb); }                        /* gelber Punkt = ein Fehlversuch */
+    .punkte { display: flex; gap: 10px; margin-top: 12px; }       /* Fehlerpunkte nebeneinander */
+    .punkt { width: 16px; height: 16px; border-radius: 50%; background: #2a3040; transition: .2s; } /* grauer Punkt */
+    .punkt.an { background: var(--gelb); box-shadow: 0 0 14px var(--gelb); } /* gelb leuchtend = ein Fehlversuch */
+    .punkt.neu { animation: plopp .5s; }                          /* gerade neu dazugekommen */
+    @keyframes plopp { 40% { transform: scale(1.9); } }           /* Punkt springt kurz groß */
+    .wackeln { animation: wackeln .45s; }                         /* Karte wackelt bei Fehlversuch */
+    @keyframes wackeln { 20%,60% { transform: translateX(-10px); } 40%,80% { transform: translateX(10px); } } /* links-rechts */
     table { width: 100%; border-collapse: collapse; font-size: 14px; } /* Protokoll-Tabelle */
-    td { padding: 7px 4px; border-top: 1px solid #252a33; }       /* Linie zwischen den Zeilen */
-    td:first-child { color: var(--leise); width: 80px;            /* Uhrzeit-Spalte grau */
-                     font-variant-numeric: tabular-nums; }        /* Ziffern gleich breit */
-    .ok { color: var(--gruen); }                                  /* Haken grün */
-    .fehler { color: var(--rot); }                                /* Kreuz rot */
+    td { padding: 7px 4px; border-top: 1px solid var(--linie); }  /* Linie zwischen den Zeilen */
+    td:first-child { color: var(--leise); width: 84px; }          /* Uhrzeit-Spalte grau */
+    tr.frisch { animation: frisch 1.5s; }                         /* neue Zeile leuchtet kurz auf */
+    @keyframes frisch { from { background: #ffffff18; } }         /* von hell nach normal */
+    .ok { color: var(--gruen); } .fehler { color: var(--rot); }   /* Haken grün, Kreuz rot */
     form { display: flex; gap: 8px; }                             /* Feld und Knopf nebeneinander */
     input { flex: 1; min-width: 0; background: var(--bg); color: var(--text); /* Eingabefeld füllt die Breite */
-            border: 1px solid #2a2f3a; border-radius: 10px; padding: 10px; font-size: 16px; }
-    button { background: var(--gruen); color: #06210f; border: 0; border-radius: 10px; /* grüner Knopf */
-             padding: 10px 16px; font-weight: 700; cursor: pointer; }
-    #meldung { color: var(--leise); font-size: 14px; margin-top: 8px; min-height: 1em; } /* Rückmeldung */
+            border: 1px solid #2a3040; border-radius: 10px; padding: 10px; font-size: 16px; }
+    button.gruen { background: var(--gruen); color: #06210f; border: 0; border-radius: 10px; /* grüner Knopf */
+                   padding: 10px 16px; font-weight: 700; cursor: pointer; }
+    .meldung { color: var(--leise); font-size: 14px; margin-top: 8px; min-height: 1em; } /* Rückmeldung */
+    #hinweis { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 200%); opacity: 0; /* Meldungsband unten, erst versteckt */
+               background: #2a2210; color: var(--gelb); border: 1px solid var(--gelb);
+               padding: 12px 20px; border-radius: 12px; font-weight: 700; transition: transform .3s, opacity .3s; z-index: 5; }
+    #hinweis.zeigen { transform: translate(-50%, 0); opacity: 1; } /* fährt von unten herein und wird sichtbar */
+
+    /* ===== Grünes Vollbild: Zutritt gewährt ===== */
+    #willkommen { position: fixed; inset: 0; display: none; place-items: center; text-align: center; z-index: 20; /* ganzer Bildschirm */
+                  background: radial-gradient(circle, #0f3d26 0%, #06150d 70%); }
+    #willkommen.an { display: grid; animation: einblenden .25s; } /* sichtbar mit kurzem Einblenden */
+    #willkommen .gross { font-size: clamp(36px, 8vw, 84px); font-weight: 900; color: var(--gruen); /* großer grüner Text */
+                         letter-spacing: .06em; text-shadow: 0 0 40px #2fbf7199; }
+    #willkommen .klein { font-size: clamp(18px, 3vw, 28px); margin-top: 8px; } /* Name darunter */
+    #haken { font-size: clamp(80px, 16vw, 160px); animation: haken .6s cubic-bezier(.2,1.6,.4,1); } /* Haken springt herein */
+    @keyframes haken { from { transform: scale(0) rotate(-30deg); } } /* von klein und schräg auf normal */
+    @keyframes einblenden { from { opacity: 0; } }                /* von unsichtbar auf sichtbar */
+
+    /* ===== Rotes Vollbild: Sperre (der Wow-Effekt) ===== */
+    #alarm { position: fixed; inset: 0; display: none; z-index: 30; overflow: hidden; /* ganzer Bildschirm, ganz oben */
+             background: radial-gradient(ellipse at center, #3a0508 0%, #120204 75%); }
+    #alarm.an { display: grid; grid-template-rows: auto 1fr auto; animation: blitz .6s; } /* Band oben, Inhalt, Band unten */
+    @keyframes blitz { 0% { background: #ff3b45; } }              /* beim Start einmal komplett rot aufblitzen */
+    #alarm::before { content: ""; position: absolute; inset: 0; pointer-events: none; /* Scanlinien wie ein alter Monitor */
+                     background: repeating-linear-gradient(0deg, #0000 0 3px, #00000040 3px 4px); }
+    #alarm::after { content: ""; position: absolute; inset: 0; pointer-events: none; /* pulsierender roter Rand */
+                    box-shadow: inset 0 0 120px #ff3b45aa; animation: randpuls 1s infinite alternate; }
+    @keyframes randpuls { to { box-shadow: inset 0 0 40px #ff3b4544; } } /* Rand wird schwächer und wieder stärker */
+    .band { background: repeating-linear-gradient(-45deg, #ffcc00 0 22px, #111 22px 44px); /* gelb-schwarzes Absperrband */
+            height: 38px; overflow: hidden; display: flex; align-items: center; position: relative; z-index: 1; }
+    .band span { white-space: nowrap; font-weight: 900; letter-spacing: .3em; color: #fff; /* Lauftext auf dem Band */
+                 background: #111; padding: 2px 14px; animation: lauf 12s linear infinite; }
+    @keyframes lauf { from { transform: translateX(100vw); } to { transform: translateX(-100%); } } /* läuft von rechts nach links */
+    .alarm-inhalt { position: relative; z-index: 1; display: grid; place-items: center; /* Inhalt mittig */
+                    text-align: center; padding: 20px; gap: 14px; align-content: center; }
+    .vorfall { color: #ffb3b7; letter-spacing: .25em; font-size: 14px; } /* "VORFALL #3" klein oben */
+    #glitch { font-size: clamp(40px, 9vw, 104px); font-weight: 900; letter-spacing: .04em; margin: 0; /* riesige Überschrift */
+              color: #fff; position: relative; animation: zittern 2.5s infinite; }
+    #glitch::before, #glitch::after { content: attr(data-text); position: absolute; inset: 0; } /* zwei Farb-Kopien des Texts */
+    #glitch::before { color: #ff004c; animation: glitch1 1.8s infinite steps(2); mix-blend-mode: screen; } /* rote Kopie */
+    #glitch::after { color: #00e5ff; animation: glitch2 1.4s infinite steps(2); mix-blend-mode: screen; } /* türkise Kopie */
+    @keyframes glitch1 { 0%,100% { clip-path: inset(0 0 70% 0); transform: translate(-4px, -2px); } 50% { clip-path: inset(60% 0 0 0); transform: translate(4px, 2px); } } /* oberes/unteres Stück verschoben */
+    @keyframes glitch2 { 0%,100% { clip-path: inset(40% 0 30% 0); transform: translate(5px, 0); } 50% { clip-path: inset(10% 0 75% 0); transform: translate(-5px, 1px); } } /* Mittelstück verschoben */
+    @keyframes zittern { 0%,92%,100% { transform: none; } 94% { transform: translate(3px,-2px) skewX(6deg); } 97% { transform: translate(-3px,2px); } } /* kurzes Zucken alle 2,5 s */
+    .grund { font-size: clamp(16px, 2.6vw, 22px); color: #ffd6d8; } /* "3 Fehlversuche in 9 s" */
+    #uhrring { position: relative; width: min(56vw, 260px); aspect-ratio: 1; } /* Platz für den Countdown-Ring */
+    #uhrring svg { width: 100%; height: 100%; transform: rotate(-90deg); } /* Ring startet oben */
+    #radar { position: absolute; inset: 8%; border-radius: 50%;    /* Radar-Strahl im Ring */
+             background: conic-gradient(from 0deg, #ff3b4500 0deg, #ff3b4566 40deg, #ff3b4500 60deg);
+             animation: radar 2s linear infinite; }
+    @keyframes radar { to { transform: rotate(360deg); } }        /* dreht sich einmal pro 2 s */
+    #rest { position: absolute; inset: 0; display: grid; place-items: center; /* Restzeit mittig im Ring */
+            font-size: clamp(34px, 8vw, 64px); font-weight: 800; text-shadow: 0 0 24px #ff3b45; }
+    #liste { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; font-size: 15px; } /* die drei Fehlversuche */
+    #liste li { opacity: 0; animation: tippen .4s forwards; color: #ffc9cc; } /* erscheinen nacheinander */
+    @keyframes tippen { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } } /* von unten einblenden */
+    .warnung { color: var(--gelb); font-weight: 700; }            /* "Nächste Sperre: 2:00 min" */
+    #alarm form { width: min(420px, 90vw); }                      /* Admin-Feld im Alarm nicht zu breit */
+    #alarm input { background: #00000066; border-color: #ff3b4566; } /* dunkles Feld mit rotem Rand */
+    .wackel-bild { animation: bebt .5s; }                         /* ganzer Bildschirm bebt beim Start */
+    @keyframes bebt { 10%,50%,90% { transform: translate(-8px, 4px); } 30%,70% { transform: translate(8px, -4px); } } /* Erdbeben */
+
+    /* ===== Ende der Sperre ===== */
+    #frei { position: fixed; inset: 0; display: none; place-items: center; z-index: 40; text-align: center; /* über dem Alarm */
+            background: #06150dee; font-size: clamp(32px, 7vw, 72px); font-weight: 900; color: var(--gruen); }
+    #frei.an { display: grid; animation: einblenden .3s; }        /* kurz einblenden */
+
+    /* Wer im Betriebssystem "weniger Bewegung" eingestellt hat, bekommt keine Wackel- und Glitch-Effekte */
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; } }
   </style>
 </head>
 <body>
 <main>
-  <h1>SENTINEL · ZUTRITTSKONTROLLE</h1>                           <!-- Überschrift -->
+  <header>
+    <h1>SENTINEL · ZUTRITTSKONTROLLE</h1>                         <!-- Überschrift -->
+    <span id="uhr" class="mono">--:--:--</span>                   <!-- Live-Uhr -->
+    <button id="ton" class="aus" type="button">🔇 Ton aktivieren</button> <!-- Browser erlauben Ton erst nach einem Klick -->
+  </header>
   <section class="karte" id="zustand">                            <!-- Karte 1: Zustand -->
     <div id="ring">🔓</div>                                        <!-- Kreis mit Schloss -->
     <div>
       <div id="titel">Bereit</div>                                <!-- großer Zustandstext -->
-      <div id="unter">PIN am Keypad eingeben</div>                <!-- Hinweis oder Countdown -->
+      <div id="unter">PIN am Keypad eingeben</div>                <!-- Hinweiszeile -->
       <div class="punkte" id="punkte"></div>                      <!-- hier entstehen die Fehlerpunkte -->
     </div>
   </section>
-  <section class="karte"><table id="log"></table></section>       <!-- Karte 2: Protokoll -->
+  <section class="karte"><table id="log" class="mono"></table></section> <!-- Karte 2: Protokoll -->
   <section class="karte">                                         <!-- Karte 3: Admin-Entsperren -->
-    <form id="frm">
-      <input id="pin" type="password" inputmode="numeric"
-             autocomplete="off" placeholder="Admin-PIN zum Entsperren"> <!-- PIN-Feld, Ziffernblock am Handy -->
-      <button>Entsperren</button>                                 <!-- schickt das Formular ab -->
+    <form class="entsperren">
+      <input type="password" inputmode="numeric" autocomplete="off" placeholder="Admin-PIN zum Entsperren"> <!-- PIN-Feld -->
+      <button class="gruen">Entsperren</button>                   <!-- schickt das Formular ab -->
     </form>
-    <div id="meldung"></div>                                      <!-- "Entsperrt" oder "Admin-PIN falsch" -->
+    <div class="meldung"></div>                                   <!-- Rückmeldung -->
   </section>
 </main>
+
+<div id="hinweis"></div>                                          <!-- Meldungsband für Fehlversuche -->
+
+<div id="willkommen">                                             <!-- grünes Vollbild bei richtiger PIN -->
+  <div>
+    <div id="haken">✅</div>                                       <!-- großer Haken -->
+    <div class="gross">ZUTRITT GEWÄHRT</div>                      <!-- große Schrift -->
+    <div class="klein" id="willkommen-name"></div>                <!-- "Willkommen, Admin" -->
+  </div>
+</div>
+
+<div id="alarm">                                                  <!-- rotes Vollbild bei Sperre -->
+  <div class="band"><span>⚠ SICHERHEITSALARM · ZUGRIFF GESPERRT · DREI FEHLVERSUCHE · VORFALL PROTOKOLLIERT · ⚠ SICHERHEITSALARM · ZUGRIFF GESPERRT ·</span></div> <!-- Absperrband oben -->
+  <div class="alarm-inhalt">
+    <div class="vorfall mono" id="vorfall">VORFALL #1</div>       <!-- laufende Nummer der Sperre -->
+    <h2 id="glitch" data-text="ZUGRIFF GESPERRT">ZUGRIFF GESPERRT</h2> <!-- riesige Glitch-Überschrift -->
+    <div class="grund" id="grund">3 Fehlversuche erkannt</div>    <!-- Begründung -->
+    <div id="uhrring">                                            <!-- Countdown-Ring -->
+      <div id="radar"></div>                                      <!-- drehender Radar-Strahl -->
+      <svg viewBox="0 0 100 100">                                 <!-- Kreise für den Ring -->
+        <circle cx="50" cy="50" r="45" fill="none" stroke="#ffffff14" stroke-width="6"/> <!-- grauer Hintergrund-Ring -->
+        <circle id="bogen" cx="50" cy="50" r="45" fill="none" stroke="#ff3b45" stroke-width="6" stroke-linecap="round"
+                pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/> <!-- roter Ring, wird beim Ablaufen kürzer -->
+      </svg>
+      <div id="rest" class="mono">1:00</div>                      <!-- Restzeit in der Mitte -->
+    </div>
+    <ul id="liste" class="mono"></ul>                             <!-- die Fehlversuche mit Uhrzeit -->
+    <div class="warnung" id="naechste"></div>                     <!-- Warnung zur nächsten Sperre -->
+    <form class="entsperren">
+      <input type="password" inputmode="numeric" autocomplete="off" placeholder="Admin-PIN"> <!-- Admin kann hier entsperren -->
+      <button class="gruen">Entsperren</button>
+    </form>
+    <div class="meldung"></div>                                   <!-- Rückmeldung -->
+  </div>
+  <div class="band"><span>PROTOKOLLIERT IN SQLITE · SPERRE ÜBERSTEHT NEUSTART · SPERRZEIT VERDOPPELT SICH · NUR ADMIN KANN ENTSPERREN ·</span></div> <!-- Absperrband unten -->
+</div>
+
+<div id="frei">🔓 SPERRE AUFGEHOBEN</div>                         <!-- grünes Bild, wenn die Sperre endet -->
+
 <script>
+// ===== Hilfsfunktionen =====
 // Kurzform: $('titel') statt document.getElementById('titel')
 const $ = id => document.getElementById(id);
 // Macht Text sicher für HTML: aus < wird &lt; usw., damit kein fremder Code ausgeführt wird
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'})[c]);
+// Sekunden als m:ss, z. B. 75 -> "1:15"
+const mmss = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+// Startet eine CSS-Animation neu: Klasse weg, kurz warten (Layout neu berechnen), Klasse wieder dran
+function neuAnimieren(el, klasse) { el.classList.remove(klasse); void el.offsetWidth; el.classList.add(klasse); }
 
-// Holt den Zustand vom Pi und malt die Seite neu
-async function laden() {
-  try {
-    // Anfrage an /api/status, Antwort als JSON lesen
-    const s = await (await fetch('/api/status')).json();
-    // Klasse "gesperrt" an den body hängen oder entfernen (färbt den Ring rot)
-    document.body.classList.toggle('gesperrt', s.gesperrt);
-    // Geschlossenes oder offenes Schloss
-    $('ring').textContent = s.gesperrt ? '🔒' : '🔓';
-    if (s.gesperrt) {
-      // Restzeit auf ganze Sekunden aufrunden
-      const r = Math.ceil(s.rest);
-      // Großer Text
-      $('titel').textContent = 'GESPERRT';
-      // Countdown als Minuten:Sekunden, Sekunden immer zweistellig
-      $('unter').textContent = 'noch ' + Math.floor(r / 60) + ':' + String(r % 60).padStart(2, '0') + ' min · Sperrstufe ' + s.sperr_stufe;
-    } else {
-      // Nicht gesperrt: Normalzustand anzeigen
-      $('titel').textContent = 'Bereit';
-      $('unter').textContent = 'PIN am Keypad eingeben';
-    }
-    // So viele Punkte wie erlaubte Fehlversuche, die bisherigen Fehler gelb
-    $('punkte').innerHTML = Array.from({length: s.max}, (_, i) =>
-      '<span class="punkt' + (i < s.fehlversuche ? ' an' : '') + '"></span>').join('');
-    // Protokoll: eine Tabellenzeile pro Versuch mit Uhrzeit, Haken/Kreuz, Name, Hinweis
-    $('log').innerHTML = s.versuche.map(v =>
-      '<tr><td>' + v.zeit + '</td><td class="' + (v.erfolg ? 'ok' : 'fehler') + '">' +
-      (v.erfolg ? '✔' : '✖') + '</td><td>' + esc(v.name) + '</td><td>' + esc(v.hinweis) + '</td></tr>'
-    ).join('') || '<tr><td>Noch keine Versuche</td></tr>';
-  } catch (e) {
-    // Pi nicht erreichbar (Dashboard aus, WLAN weg)
-    $('unter').textContent = 'keine Verbindung zum Pi';
+// ===== Ton und Sprache =====
+// Der Audio-Baustein des Browsers. Erst nach einem Klick erlaubt.
+let audio = null;
+// Klick auf den Ton-Knopf schaltet Ton und Sprache frei
+$('ton').onclick = () => {
+  // Audio-Baustein anlegen (oder den vorhandenen wieder aufwecken)
+  audio = audio || new AudioContext();
+  audio.resume();
+  // Knopf umstellen: nicht mehr pulsieren
+  $('ton').classList.remove('aus');
+  $('ton').textContent = '🔊 Ton an';
+  // Kurze Probe, damit man hört, dass es geht
+  ton(880, 0.12); sprich('Ton aktiv.');
+};
+// Spielt einen Ton: Frequenz in Hertz, Dauer in Sekunden, Wellenform, Startverzögerung
+function ton(hz, dauer, form = 'sine', ab = 0) {
+  if (!audio) return;                                  // ohne Freigabe kein Ton
+  const t = audio.currentTime + ab;                    // Startzeitpunkt
+  const osz = audio.createOscillator();                // Tongenerator
+  const laut = audio.createGain();                     // Lautstärkeregler
+  osz.type = form; osz.frequency.value = hz;           // Klangfarbe und Tonhöhe
+  laut.gain.setValueAtTime(0.0001, t);                 // leise anfangen ...
+  laut.gain.exponentialRampToValueAtTime(0.25, t + 0.02); // ... schnell lauter (kein Knacken)
+  laut.gain.exponentialRampToValueAtTime(0.0001, t + dauer); // ... und am Ende ausklingen
+  osz.connect(laut).connect(audio.destination);        // Generator -> Regler -> Lautsprecher
+  osz.start(t); osz.stop(t + dauer + 0.05);            // abspielen und wieder stoppen
+}
+// Sirene: Tonhöhe fährt mehrmals hoch und runter
+function sirene(runden = 4) {
+  if (!audio) return;                                  // ohne Freigabe nichts
+  const t = audio.currentTime;                         // Startzeit
+  const osz = audio.createOscillator();                // Tongenerator
+  const laut = audio.createGain();                     // Lautstärkeregler
+  osz.type = 'sawtooth';                               // rauer Sägezahn klingt nach Alarm
+  for (let i = 0; i < runden; i++) {                   // pro Runde ...
+    osz.frequency.setValueAtTime(520, t + i * 0.9);    // ... tief anfangen
+    osz.frequency.linearRampToValueAtTime(1100, t + i * 0.9 + 0.45); // ... hochziehen
+    osz.frequency.linearRampToValueAtTime(520, t + i * 0.9 + 0.9);   // ... wieder runter
   }
+  laut.gain.setValueAtTime(0.12, t);                   // nicht zu laut
+  laut.gain.setValueAtTime(0.12, t + runden * 0.9 - 0.1); // bis kurz vor Schluss halten
+  laut.gain.linearRampToValueAtTime(0, t + runden * 0.9); // dann ausblenden
+  osz.connect(laut).connect(audio.destination);        // an den Lautsprecher
+  osz.start(t); osz.stop(t + runden * 0.9);            // abspielen
+}
+// Lässt den Browser einen deutschen Satz sprechen
+function sprich(text) {
+  if (!audio || !window.speechSynthesis) return;       // nur mit Freigabe und wenn der Browser es kann
+  speechSynthesis.cancel();                            // laufende Ansage abbrechen
+  const s = new SpeechSynthesisUtterance(text);        // neue Ansage
+  s.lang = 'de-DE'; s.rate = 0.95; s.pitch = 0.8;      // Deutsch, etwas langsamer und tiefer
+  speechSynthesis.speak(s);                            // abspielen
 }
 
-// Was passiert, wenn der Knopf "Entsperren" gedrückt wird
-$('frm').onsubmit = async e => {
-  // Verhindert, dass der Browser die Seite neu lädt
-  e.preventDefault();
-  // Die PIN als JSON an /api/entsperren schicken
-  const r = await fetch('/api/entsperren', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({pin: $('pin').value})
-  });
-  // Antwort des Pi unter dem Feld anzeigen
-  $('meldung').textContent = (await r.json()).meldung;
-  // Feld leeren, damit die PIN nicht stehen bleibt
-  $('pin').value = '';
-  // Sofort neu laden, damit man das Ergebnis direkt sieht
-  laden();
-};
+// ===== Effekte für die einzelnen Ereignisse =====
+// Ein Fehlversuch (1 oder 2 von 3)
+function effektFehler(nr, max) {
+  neuAnimieren($('zustand'), 'wackeln');               // Karte wackelt
+  ton(220, 0.35, 'square');                            // tiefer Brummton
+  const h = $('hinweis');                              // Meldungsband
+  h.textContent = '⚠ Falsche PIN: Fehlversuch ' + nr + ' von ' + max; // Text setzen
+  h.classList.add('zeigen');                           // hereinfahren
+  setTimeout(() => h.classList.remove('zeigen'), 2600); // nach 2,6 s wieder weg
+  if (nr === max - 1) sprich('Warnung. Noch ein Versuch, dann wird gesperrt.'); // letzte Warnung ansagen
+}
+// Richtige PIN
+function effektErfolg(name) {
+  $('willkommen-name').textContent = 'Willkommen, ' + name; // Name einsetzen
+  $('willkommen').classList.add('an');                 // grünes Vollbild zeigen
+  [523, 659, 784].forEach((hz, i) => ton(hz, 0.25, 'sine', i * 0.12)); // fröhlicher Dreiklang C-E-G
+  sprich('Zutritt gewährt. Willkommen, ' + name + '.'); // Ansage
+  setTimeout(() => $('willkommen').classList.remove('an'), 2800); // nach 2,8 s ausblenden
+}
+// Sperre beginnt (mitSchau = false, wenn die Seite erst während einer laufenden Sperre geöffnet wird)
+function effektSperre(s, mitSchau) {
+  $('alarm').classList.add('an');                      // rotes Vollbild zeigen
+  if (!mitSchau) return;                               // Seite neu geladen: kein Erdbeben, keine Sirene
+  neuAnimieren(document.body, 'wackel-bild');          // Bildschirm bebt
+  sirene();                                            // Sirene
+  setTimeout(() => sprich('Achtung. Drei Fehlversuche. Zugriff gesperrt für ' +
+    Math.round(s.dauer) + ' Sekunden. Der Vorfall wurde protokolliert.'), 3600); // Ansage nach der Sirene
+}
+// Sperre endet (abgelaufen oder vom Admin aufgehoben)
+function effektFrei(durchAdmin) {
+  $('alarm').classList.remove('an');                   // rotes Vollbild weg
+  $('frei').textContent = durchAdmin ? '🔓 VOM ADMIN ENTSPERRT' : '🔓 SPERRE ABGELAUFEN'; // passender Text
+  $('frei').classList.add('an');                       // grünes Zwischenbild
+  [784, 988].forEach((hz, i) => ton(hz, 0.2, 'sine', i * 0.15)); // zwei helle Töne
+  sprich(durchAdmin ? 'Sperre durch Admin aufgehoben.' : 'Sperre abgelaufen. System bereit.'); // Ansage
+  setTimeout(() => $('frei').classList.remove('an'), 2200); // nach 2,2 s weg
+}
 
-// Einmal sofort laden ...
-laden();
-// ... und danach jede Sekunde (1000 ms) wieder
-setInterval(laden, 1000);
+// ===== Daten vom Pi holen und anzeigen =====
+let letzteId = null;          // höchste Protokoll-Nummer, die wir schon kennen
+let warGesperrt = null;       // Sperr-Zustand der letzten Abfrage (null = erste Abfrage)
+let altFehler = 0;            // Fehlerzahl der letzten Abfrage
+async function laden() {
+  let s;                                               // hier landet die Antwort
+  try { s = await (await fetch('/api/status')).json(); } // Zustand vom Pi holen
+  catch (e) { $('unter').textContent = 'keine Verbindung zum Pi'; return; } // Pi nicht erreichbar
+  const erste = warGesperrt === null;                  // erste Abfrage nach dem Laden der Seite?
+  // --- neue Protokoll-Einträge erkennen (nur nach der ersten Abfrage, sonst feuert die ganze Historie) ---
+  const neue = erste ? [] : s.versuche.filter(v => v.id > letzteId).reverse(); // neue Einträge, älteste zuerst
+  for (const v of neue) {                              // jeden neuen Eintrag ansehen
+    if (v.erfolg && v.name) effektErfolg(v.name);      // richtige PIN eines Benutzers
+  }
+  if (s.versuche.length) letzteId = s.versuche[0].id;  // neueste Nummer merken
+  // --- Fehlversuch erkennen: Zähler ist gestiegen ---
+  if (!erste && s.fehlversuche > altFehler && !s.gesperrt) effektFehler(s.fehlversuche, s.max);
+  // --- Sperre beginnt oder endet ---
+  if (s.gesperrt && !warGesperrt) effektSperre(s, !erste); // gerade gesperrt worden
+  if (!s.gesperrt && warGesperrt) {                    // gerade frei geworden
+    const admin = s.versuche.some(v => v.id === letzteId && v.hinweis.startsWith('entsperrt')); // hat ein Admin entsperrt?
+    effektFrei(admin);
+  }
+  // --- normale Karte aktualisieren ---
+  $('ring').textContent = s.gesperrt ? '🔒' : '🔓';     // Schloss-Symbol
+  $('ring').style.borderColor = s.gesperrt ? 'var(--rot)' : 'var(--gruen)'; // Ringfarbe
+  $('titel').textContent = s.gesperrt ? 'GESPERRT' : 'Bereit'; // Zustandstext
+  $('unter').textContent = s.gesperrt ? 'noch ' + mmss(Math.ceil(s.rest)) + ' min' : 'PIN am Keypad eingeben'; // Zeile darunter
+  $('punkte').innerHTML = Array.from({length: s.max}, (_, i) => // Fehlerpunkte zeichnen
+    '<span class="punkt' + (i < s.fehlversuche ? ' an' : '') + (i === s.fehlversuche - 1 && s.fehlversuche > altFehler ? ' neu' : '') + '"></span>').join('');
+  $('log').innerHTML = s.versuche.map(v =>             // Protokoll-Tabelle
+    '<tr' + (neue.some(n => n.id === v.id) ? ' class="frisch"' : '') + '><td>' + v.zeit + '</td><td class="' +
+    (v.erfolg ? 'ok' : 'fehler') + '">' + (v.erfolg ? '✔' : '✖') + '</td><td>' + esc(v.name) + '</td><td>' + esc(v.hinweis) + '</td></tr>'
+  ).join('') || '<tr><td colspan="4">Noch keine Versuche</td></tr>';
+  // --- Alarm-Vollbild aktualisieren ---
+  if (s.gesperrt) {
+    $('vorfall').textContent = 'VORFALL #' + s.vorfall + ' · SPERRSTUFE ' + s.sperr_stufe; // Vorfall-Nummer
+    $('rest').textContent = mmss(Math.ceil(s.rest));    // Restzeit in der Ringmitte
+    $('bogen').style.strokeDashoffset = 100 - 100 * s.rest / s.dauer; // Ring wird mit der Zeit kürzer
+    $('naechste').textContent = '⚠ Nächste Sperre: ' + mmss(s.naechste) + ' min (verdoppelt sich jedes Mal)'; // Warnung
+    const fehl = s.versuche.filter(v => !v.erfolg && !v.hinweis.startsWith('GESPERRT')).slice(0, 3).reverse(); // die drei Fehler
+    const sperrZeile = s.versuche.find(v => v.hinweis.startsWith('GESPERRT')); // die Sperr-Zeile
+    $('grund').textContent = '3 Fehlversuche erkannt · gesperrt um ' + (sperrZeile ? sperrZeile.zeit : ''); // Begründung
+    const html = fehl.map((v, i) => '<li style="animation-delay:' + (0.6 + i * 0.5) + 's">✖ ' + v.zeit + ' · Fehlversuch ' + (i + 1) + ' · PIN abgelehnt</li>').join(''); // Liste bauen
+    if ($('liste').dataset.html !== html) { $('liste').innerHTML = html; $('liste').dataset.html = html; } // nur neu zeichnen, wenn sich etwas ändert (sonst flackert die Animation)
+  }
+  // --- Zustand für die nächste Abfrage merken ---
+  warGesperrt = s.gesperrt; altFehler = s.fehlversuche;
+}
+
+// ===== Admin-Entsperren (gibt es zweimal: normale Seite und Alarm-Vollbild) =====
+document.querySelectorAll('form.entsperren').forEach(f => f.onsubmit = async e => {
+  e.preventDefault();                                  // Seite nicht neu laden
+  const feld = f.querySelector('input');               // das PIN-Feld dieses Formulars
+  const r = await fetch('/api/entsperren', {           // PIN an den Pi schicken
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({pin: feld.value})
+  });
+  f.nextElementSibling.textContent = (await r.json()).meldung; // Antwort unter dem Formular zeigen
+  if (!r.ok) ton(150, 0.4, 'square');                  // falsche Admin-PIN: tiefer Ton
+  feld.value = '';                                     // Feld leeren
+  laden();                                             // sofort neu laden
+});
+
+// ===== Uhr und Abfrage-Takt =====
+setInterval(() => $('uhr').textContent = new Date().toLocaleTimeString('de-DE'), 1000); // Uhr jede Sekunde
+laden();                                               // einmal sofort laden ...
+setInterval(laden, 500);                               // ... und danach zweimal pro Sekunde
 </script>
 </body>
 </html>

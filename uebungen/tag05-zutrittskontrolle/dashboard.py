@@ -11,6 +11,9 @@ Die Webseite selbst steht in dashboard.html.
 """
 # Der Docstring oben wird nicht ausgeführt. Er erklärt Start und Zweck.
 
+# os liest Umgebungsvariablen (hier den Port).
+import os
+
 # time wandelt Unix-Zeit in Uhrzeit um und kann kurz warten.
 import time
 
@@ -43,10 +46,13 @@ def api_status():
     s["max"] = db.MAX_FEHLVERSUCHE
     # Die letzten 12 Versuche als Liste anhängen, jeweils mit lesbarer Uhrzeit.
     s["versuche"] = [{
+        "id": v["id"],                                                   # laufende Nummer, erkennt neue Einträge
         "zeit": time.strftime("%H:%M:%S", time.localtime(v["zeit"])),  # z. B. 09:25:45
         "erfolg": bool(v["erfolg"]),                                     # True oder False
         "name": v["name"] or "",                                         # leer bei falscher PIN
         "hinweis": v["hinweis"] or ""} for v in db.letzte_versuche(con, 12)]
+    # Vorfall-Nummer: wie oft schon gesperrt wurde.
+    s["vorfall"] = db.anzahl_sperren(con)
     # Alles als JSON an den Browser zurückgeben.
     return jsonify(s)
 
@@ -85,5 +91,7 @@ def seite():
 
 # Nur beim direkten Start den Webserver starten.
 if __name__ == "__main__":
-    # host="0.0.0.0": erreichbar von anderen Geräten im Netz, nicht nur vom Pi selbst. Port 5000.
-    app.run(host="0.0.0.0", port=5000)
+    # host="0.0.0.0": erreichbar von anderen Geräten im Netz, nicht nur vom Pi selbst.
+    # Port 5000, außer die Umgebungsvariable PORT sagt etwas anderes (für eine Probe parallel).
+    # threaded=True: mehrere Browser (Beamer, Handy) gleichzeitig bedienen.
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), threaded=True)

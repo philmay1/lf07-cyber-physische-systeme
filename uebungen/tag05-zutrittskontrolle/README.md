@@ -2,11 +2,15 @@
 
 # Exercise day 5: access control with keypad and database
 
-![Dashboard during a lockout](bilder/dashboard_gesperrt.jpg)
+![Dashboard alarm screen after three wrong PINs](bilder/alarm_beamer.jpg)
 
 A PIN is typed on a 4x4 membrane keypad. If it is correct, the green traffic light LED stays on for three seconds ("door open") and the buzzer beeps twice. After three wrong PINs the keypad locks for 60 seconds. Each further lockout doubles, up to 15 minutes. Every attempt is stored with a timestamp in a SQLite database. A live dashboard in the browser shows the state, also on a phone, and an admin can lift the lockout from there.
 
 This exercise is the base for SENTINEL project 05 (local access control) and 06 (PIN check against a database).
+
+## Alarm show
+
+The dashboard polls the Pi twice per second and reacts to every new event. A correct PIN shows a green full-screen "ACCESS GRANTED" with a chime and a spoken welcome. Wrong PINs shake the card and fill a warning dot. The third wrong PIN turns the screen into a red lockdown view: siren, hazard tape, glitch headline, incident number, a draining countdown ring with a radar sweep, the three failed attempts with timestamps, and a spoken warning. Sound and speech come from the browser (Web Audio, Speech Synthesis); click "Ton aktivieren" once before presenting.
 
 ## Why a database
 

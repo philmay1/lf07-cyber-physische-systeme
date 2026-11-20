@@ -27,7 +27,8 @@ import time
 from pathlib import Path
 
 # Die Datenbank-Datei liegt im selben Ordner wie dieses Skript und heißt zutritt.db.
-DB_DATEI = Path(__file__).with_name("zutritt.db")
+# Mit der Umgebungsvariablen ZUTRITT_DB lässt sich eine andere Datei wählen (z. B. für eine Probe-Vorführung).
+DB_DATEI = Path(os.environ.get("ZUTRITT_DB") or Path(__file__).with_name("zutritt.db"))
 
 # Nach so vielen falschen PINs hintereinander wird gesperrt.
 MAX_FEHLVERSUCHE = 3
@@ -137,9 +138,14 @@ def status(con, jetzt=None):
     s = con.execute("SELECT * FROM sperre WHERE id = 1").fetchone()
     # Restliche Sperrzeit in Sekunden. max(0, ...) verhindert negative Werte.
     rest = max(0, s["gesperrt_bis"] - jetzt)
-    # Alles Wichtige zusammenpacken: gesperrt ja/nein, Restzeit, Fehlerzahl, Stufe.
+    # Wie lange die aktuelle Sperre insgesamt dauert (für den ablaufenden Ring im Dashboard).
+    # Stufe 1 = erste Sperre = SPERRE_START, Stufe 2 = doppelt so lang usw.
+    dauer = min(SPERRE_START * 2 ** max(s["sperr_stufe"] - 1, 0), SPERRE_MAX)
+    # Wie lange die nächste Sperre dauern würde (zeigt das Dashboard als Warnung an).
+    naechste = min(SPERRE_START * 2 ** s["sperr_stufe"], SPERRE_MAX)
+    # Alles Wichtige zusammenpacken: gesperrt ja/nein, Restzeit, Fehlerzahl, Stufe, Dauern.
     return {"gesperrt": rest > 0, "rest": rest, "fehlversuche": s["fehlversuche"],
-            "sperr_stufe": s["sperr_stufe"]}
+            "sperr_stufe": s["sperr_stufe"], "dauer": dauer, "naechste": naechste}
 
 
 # Schreibt einen Versuch ins Protokoll und zählt Fehler. Rückgabe: "ok", "falsch" oder "gesperrt".
@@ -195,6 +201,12 @@ def entsperren(con, wer="admin"):
 def letzte_versuche(con, anzahl=15):
     # LEFT JOIN holt den Benutzernamen dazu. Bei falscher PIN gibt es keinen, dann bleibt name leer.
     # ORDER BY v.id DESC sortiert absteigend, LIMIT begrenzt die Anzahl.
-    return con.execute("""SELECT v.zeit, v.erfolg, v.hinweis, b.name FROM versuche v
+    return con.execute("""SELECT v.id, v.zeit, v.erfolg, v.hinweis, b.name FROM versuche v
                           LEFT JOIN benutzer b ON b.id = v.benutzer_id
                           ORDER BY v.id DESC LIMIT ?""", (anzahl,)).fetchall()
+
+
+# Zählt, wie oft das System insgesamt schon gesperrt wurde (Vorfall-Nummer im Dashboard).
+def anzahl_sperren(con):
+    # Jede Sperre steht im Protokoll mit einem Hinweis, der mit "GESPERRT" beginnt.
+    return con.execute("SELECT COUNT(*) FROM versuche WHERE hinweis LIKE 'GESPERRT%'").fetchone()[0]

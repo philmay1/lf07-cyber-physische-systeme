@@ -2,11 +2,36 @@
 
 # Übung Tag 5: Zutrittskontrolle mit Keypad und Datenbank
 
-![Dashboard während einer Sperre](bilder/dashboard_gesperrt.jpg)
+![Alarm-Bildschirm des Dashboards nach drei falschen PINs](bilder/alarm_beamer.jpg)
 
 Am 4x4-Keypad wird eine PIN eingegeben. Ist sie richtig, leuchtet die grüne Ampel-LED drei Sekunden („Tür offen“) und der Summer piept zweimal. Nach drei falschen PINs ist das Keypad gesperrt, zuerst für 60 Sekunden. Jede weitere Sperre dauert doppelt so lange, bis höchstens 15 Minuten, so wie man es vom Handy kennt. Jeder Versuch landet mit Uhrzeit in einer SQLite-Datenbank. Ein Live-Dashboard im Browser zeigt den Zustand, auch am Handy. Ein Admin kann die Sperre dort aus der Ferne aufheben.
 
 Die Übung ist die Grundlage für SENTINEL-Projekt 05 (lokale Zutrittskontrolle) und 06 (Prüfung gegen eine Datenbank).
+
+## Alarm-Show im Dashboard
+
+Das Dashboard reagiert auf jedes Ereignis, das im Protokoll ankommt. Es fragt den Pi zweimal pro Sekunde ab und vergleicht mit der letzten Antwort.
+
+| Ereignis | Was im Browser passiert |
+|---|---|
+| richtige PIN | grünes Vollbild „ZUTRITT GEWÄHRT“ mit Namen, Dreiklang, Ansage „Willkommen, Admin“ |
+| 1. und 2. falsche PIN | Karte wackelt, gelber Punkt springt auf, Meldungsband „Fehlversuch 2 von 3“, Brummton; vor dem letzten Versuch warnt eine Ansage |
+| 3. falsche PIN | Bildschirm blitzt rot und bebt, Sirene, rotes Vollbild mit Absperrband, Glitch-Schrift „ZUGRIFF GESPERRT“, Vorfall-Nummer, ablaufender Countdown-Ring mit Radar, die drei Fehlversuche mit Uhrzeit, Warnung zur nächsten (doppelt so langen) Sperre, Ansage „Achtung. Drei Fehlversuche. Zugriff gesperrt …“ |
+| Sperre läuft ab | grünes Bild „SPERRE ABGELAUFEN“, Ansage |
+| Admin entsperrt | grünes Bild „VOM ADMIN ENTSPERRT“, Ansage; das Admin-Feld gibt es auch direkt im Alarm-Bildschirm |
+
+Ton und Sprache kommen aus dem Browser selbst (Web Audio und Sprachausgabe), es wird nichts installiert. Browser spielen Ton erst nach einem Klick ab. Deshalb vor der Vorführung oben rechts einmal auf „Ton aktivieren“ klicken. Wer im Betriebssystem „weniger Bewegung“ eingestellt hat, bekommt die Seite ohne Wackel- und Glitch-Effekte.
+
+![Grüner Bildschirm bei richtiger PIN](bilder/zutritt_gewaehrt.jpg)
+
+### Vorführung in 2 Minuten
+
+1. Pi starten, in zwei SSH-Fenstern `python3 dashboard.py` und `python3 zutritt.py --tastatur` starten (mit Keypad ohne `--tastatur`).
+2. Am Beamer `http://<IP-des-Pi>:5000` öffnen, F11 für Vollbild, „Ton aktivieren“ klicken.
+3. Richtige PIN tippen: grünes Bild und die grüne Ampel-LED.
+4. Dreimal falsch tippen: Sirene, Alarm-Bildschirm, rote LED dauerhaft an.
+5. Pi-Stecker ziehen und wieder einstecken: Die Sperre ist immer noch da (sie steht in der Datenbank).
+6. Admin-PIN im Alarm-Bildschirm eingeben: „VOM ADMIN ENTSPERRT“.
 
 ## Warum die Datenbank wichtig ist
 
@@ -130,7 +155,7 @@ Im Browser `http://<IP-des-Pi>:5000` öffnen, im Heimnetz oder über Tailscale, 
 | `zutritt.py` | Keypad lesen, PIN prüfen, LEDs und Summer steuern |
 | `zutritt_db.py` | alles rund um die Datenbank: Tabellen, Hash, Sperre, Protokoll |
 | `dashboard.py` | Live-Dashboard mit Flask auf Port 5000 |
-| `dashboard.html` | die Webseite des Dashboards (HTML, CSS, JavaScript) |
+| `dashboard.html` | die Webseite des Dashboards mit Alarm-Show (HTML, CSS, JavaScript) |
 | `verwalten.py` | Benutzer anlegen, Protokoll, Status, entsperren |
 | `test_zutritt.py` | automatischer Test mit simulierten Pins |
 
