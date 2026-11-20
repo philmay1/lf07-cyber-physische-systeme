@@ -12,6 +12,12 @@ This exercise is the base for SENTINEL project 05 (local access control) and 06 
 
 The dashboard polls the Pi twice per second and reacts to every new event. A correct PIN shows a green full-screen "ACCESS GRANTED" with a chime and a spoken welcome. Wrong PINs shake the card and fill a warning dot. The third wrong PIN turns the screen into a red lockdown view: siren, hazard tape, glitch headline, incident number, a draining countdown ring with a radar sweep, the three failed attempts with timestamps, and a spoken warning. Sound and speech come from the browser (Web Audio, Speech Synthesis); click "Ton aktivieren" once before presenting.
 
+## Demo on the Pi desktop (RealVNC)
+
+Run `bash vorfuehrung.sh einrichten` once on the Pi. It adds a desktop icon "SENTINEL Vorführung" and an openbox window rule. A double click in RealVNC Viewer opens the dashboard as an app window on the left and the input terminal on the right. RealVNC does not carry sound, so open the dashboard in the notebook browser as well if the room should hear the siren.
+
+![Pi desktop in RealVNC Viewer](bilder/pi_desktop_vnc.jpg)
+
 ## Why a database
 
 If the program only counted failures in a variable, a reboot would reset the counter and defeat the lockout. The counter and the lockout end time are stored in the `sperre` table, so a lockout survives a restart.

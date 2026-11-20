@@ -33,6 +33,18 @@ Ton und Sprache kommen aus dem Browser selbst (Web Audio und Sprachausgabe), es 
 5. Pi-Stecker ziehen und wieder einstecken: Die Sperre ist immer noch da (sie steht in der Datenbank).
 6. Admin-PIN im Alarm-Bildschirm eingeben: „VOM ADMIN ENTSPERRT“.
 
+### Vorführung direkt auf dem Pi (RealVNC Viewer)
+
+Der Pi 400 hat einen eigenen Desktop. Über den RealVNC Viewer sieht man ihn auf dem Notebook und am Beamer, und genau dort läuft die Vorführung dann auch: Dashboard links, Eingabe-Fenster rechts.
+
+![Pi-Desktop im RealVNC Viewer: Dashboard links, Eingabe rechts](bilder/pi_desktop_vnc.jpg)
+
+1. Einmalig auf dem Pi einrichten: `bash vorfuehrung.sh einrichten`. Das legt das Desktop-Symbol „SENTINEL Vorführung“ an und eine Fensterregel, die das Eingabe-Fenster rechts in den Vordergrund setzt.
+2. Im RealVNC Viewer auf das Symbol „SENTINEL Vorführung“ doppelklicken. Das Skript startet das Dashboard (falls es nicht schon läuft), öffnet es als App-Fenster ohne Adressleiste und daneben das Eingabe-Fenster.
+3. Ins Eingabe-Fenster klicken und die PIN tippen. Die Tastatur des Notebooks geht über VNC an den Pi, als säße man an der Pi-400-Tastatur.
+
+RealVNC überträgt keinen Ton. Wer Sirene und Sprachansage im Raum hören will, öffnet das Dashboard zusätzlich im Browser des Notebooks (`http://<IP-des-Pi>:5000`) und klickt dort „Ton aktivieren“. Beide Ansichten laufen gleichzeitig und zeigen dasselbe.
+
 ## Warum die Datenbank wichtig ist
 
 Würde das Programm die Fehlversuche nur in einer Variablen zählen, könnte man die Sperre einfach umgehen: Stecker ziehen, neu starten, Zähler steht wieder auf 0. Deshalb stehen Zähler und Sperrzeit in der Tabelle `sperre`. Nach einem Neustart liest das Programm sie wieder ein, und die Sperre läuft weiter.
@@ -157,6 +169,7 @@ Im Browser `http://<IP-des-Pi>:5000` öffnen, im Heimnetz oder über Tailscale, 
 | `dashboard.py` | Live-Dashboard mit Flask auf Port 5000 |
 | `dashboard.html` | die Webseite des Dashboards mit Alarm-Show (HTML, CSS, JavaScript) |
 | `verwalten.py` | Benutzer anlegen, Protokoll, Status, entsperren |
+| `vorfuehrung.sh` | startet die Vorführung auf dem Pi-Desktop, `einrichten` legt Symbol und Fensterregel an |
 | `test_zutritt.py` | automatischer Test mit simulierten Pins |
 
 Die Datenbank `zutritt.db` entsteht beim ersten Start im selben Ordner. Sie steht in `.gitignore` und landet nicht auf GitHub, weil sie die PIN-Hashes enthält.
