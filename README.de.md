@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/badges/progress-de.svg" alt="3 von 12 erledigt (Projekte und Übungen)">
+  <img src="docs/badges/progress-de.svg" alt="3 von 13 erledigt (Projekte und Übungen)">
 </p>
 
 <p align="center">
@@ -177,6 +177,7 @@ Zusätzliche Aufgaben aus dem Unterricht und dem Raspberry-Pi-Handbuch. Sie geh�
 |:-:|---|---|---|:-:|
 | 03 | [Fußgängerampel](uebungen/tag03-fussgaengerampel/) | Auto- und Fußgängerampel mit Anforderungstaster und Ticksignal | Pull-up, Entprellen, Event, PNP-Transistor | ✅ |
 | 04 | [Ampel dimmen](uebungen/tag04-ampel-dimmen/) | Lässt die Ampel in drei Stufen leuchten: rot 100 %, gelb 60 %, grün 20 % | PWM, Tastgrad, PWMLED | ✅ |
+| 05 | [Zutrittskontrolle](uebungen/tag05-zutrittskontrolle/) | PIN am 4x4-Keypad, Sperre nach 3 Fehlversuchen, Protokoll in SQLite, Live-Dashboard | Matrix-Keypad, SQLite, Hash mit Salt, Flask | 🟡 |
 
 <details>
 <summary><b>Geplante MQTT-Topics</b> (Entwurf, ändert sich mit Projekt 03)</summary>

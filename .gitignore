@@ -13,3 +13,8 @@ venv/
 .vscode/
 Thumbs.db
 .DS_Store
+
+# Datenbanken (enthalten PIN-Hashes)
+*.db
+*.db-wal
+*.db-shm
