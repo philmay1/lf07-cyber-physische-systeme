@@ -16,12 +16,12 @@ PROGRAMME="mqtt_logger.py zutritt_bruecke.py funk_web.py"
 
 # Beendet ein Programm, falls es läuft. [p] verhindert, dass pkill sich selbst findet.
 stoppen() {
-    pkill -f "[p]ython3 $1" && echo "gestoppt: $1"
+    pkill -f "[p]ython3 -u $1" && echo "gestoppt: $1"
 }
 
 # Startet ein Programm im Hintergrund, falls es noch nicht läuft. Ausgaben landen in /tmp.
 starten() {
-    if pgrep -f "[p]ython3 $1" > /dev/null; then
+    if pgrep -f "[p]ython3 -u $1" > /dev/null; then
         echo "läuft schon: $1"
     else
         # setsid + nohup: läuft weiter, auch wenn das Terminal zugeht.
@@ -40,7 +40,7 @@ case "$1" in
     # Zeigen, was läuft, und ob Mosquitto aktiv ist.
     status)
         echo "Mosquitto: $(systemctl is-active mosquitto)"
-        for p in $PROGRAMME; do pgrep -f "[p]ython3 $p" > /dev/null && echo "läuft: $p" || echo "aus:   $p"; done
+        for p in $PROGRAMME; do pgrep -f "[p]ython3 -u $p" > /dev/null && echo "läuft: $p" || echo "aus:   $p"; done
         echo "Events in mqtt.db: $(python3 -c 'import funk_db; print(funk_db.anzahl(funk_db.verbinden()))')"
         exit 0 ;;
     # Einmalig: Pakete installieren, Mosquitto für das Netz öffnen, Desktop-Symbol anlegen.
