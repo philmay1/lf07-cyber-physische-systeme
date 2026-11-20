@@ -20,6 +20,12 @@ Schaltung (Pi 400, Ampel aus Tag 3 bleibt gesteckt):
 # argparse liest die Schalter beim Start, z. B. --tastatur.
 import argparse
 
+# json verpackt die Funk-Meldung für MQTT (Übung tag05-mqtt).
+import json
+
+# os liest die Umgebungsvariable MQTT_HOST.
+import os
+
 # sys gibt Zugriff auf die Tastatur-Eingabe (sys.stdin).
 import sys
 
@@ -36,6 +42,30 @@ from gpiozero import LED, Buzzer, Button, OutputDevice
 
 # Unsere eigene Datenbank-Datei zutritt_db.py, hier kurz "db" genannt.
 import zutritt_db as db
+
+# paho-mqtt ist freiwillig: Ist es installiert, meldet das Keypad jeden Versuch per MQTT.
+# Fehlt es, läuft alles wie vorher, nur ohne Funk.
+try:
+    import paho.mqtt.publish as mqtt_publish
+except ImportError:
+    mqtt_publish = None
+
+# Broker für die Funk-Meldungen. Leer ("") schaltet den Funk ab (macht der Test so).
+MQTT_HOST = os.environ.get("MQTT_HOST", "localhost")
+
+
+# Meldet das Ergebnis eines PIN-Versuchs an Mosquitto. Die PIN selbst wird NIE gesendet.
+def funk_melden(ergebnis):
+    # Ohne paho-mqtt oder ohne Broker-Adresse: nichts tun.
+    if mqtt_publish is None or not MQTT_HOST:
+        return
+    # Eine einzelne Nachricht senden (verbinden, senden, trennen in einem Schritt).
+    try:
+        mqtt_publish.single("lf07/keypad/versuch", json.dumps({"wert": ergebnis, "sender": "Pi-Keypad"}),
+                            qos=1, hostname=MQTT_HOST)
+    # Läuft kein Broker, darf das die Zutrittskontrolle nicht stören.
+    except Exception:
+        pass
 
 # ---------- Keypad ----------
 # Die vier Zeilen-Leitungen (Keypad Pin 1 bis 4). Die Zahlen sind GPIO-Nummern (BCM).
@@ -228,6 +258,8 @@ class Zutritt:
         benutzer = db.pin_pruefen(self.con, pin) if pin else None
         # Versuch speichern. Die Datenbank sagt uns: "ok", "falsch" oder "gesperrt".
         ergebnis = db.versuch_eintragen(self.con, benutzer is not None, benutzer)
+        # Ergebnis zusätzlich per MQTT melden (ok / falsch / gesperrt).
+        funk_melden(ergebnis)
         # Richtige PIN.
         if ergebnis == "ok":
             self.ausgabe(f"Zutritt für {benutzer['name']}")

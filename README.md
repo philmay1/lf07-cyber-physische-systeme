@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/badges/progress-en.svg" alt="3 of 13 done (projects and exercises)">
+  <img src="docs/badges/progress-en.svg" alt="4 of 14 done (projects and exercises)">
 </p>
 
 <p align="center">
@@ -177,6 +177,7 @@ Extra tasks from class and the Raspberry Pi Beginner's Guide. They are not part 
 | 03 | [Pedestrian crossing](uebungen/tag03-fussgaengerampel/) | Car and pedestrian lights with a request button and a ticking signal | Pull-up, debouncing, events, PNP transistor | ✅ |
 | 04 | [Dimming the traffic light](uebungen/tag04-ampel-dimmen/) | Lights the traffic light at three levels: red 100 %, yellow 60 %, green 20 % | PWM, duty cycle, PWMLED | ✅ |
 | 05 | [Access control](uebungen/tag05-zutrittskontrolle/) | PIN on a 4x4 keypad, lockout after 3 failures, log in SQLite, live dashboard | Matrix keypad, SQLite, salted hash, Flask | 🟡 |
+| 05 | [MQTT radio](uebungen/tag05-mqtt/) | Keypad, phones and notebook publish events to Mosquitto, a subscriber stores value and time in SQLite, live board for the projector | MQTT, Mosquitto, publish/subscribe, WebSocket, SQLite | ✅ |
 
 <details>
 <summary><b>Planned MQTT topics</b> (draft, will change with project 03)</summary>

@@ -19,6 +19,8 @@ from pathlib import Path
 
 # WICHTIG: muss vor dem Import von gpiozero stehen. "mock" heißt: keine echten Pins, nur Simulation.
 os.environ["GPIOZERO_PIN_FACTORY"] = "mock"
+# Im Test keine MQTT-Meldungen an einen echten Broker schicken.
+os.environ["MQTT_HOST"] = ""
 # Unsere Datenbank-Datei laden.
 import zutritt_db as db                                # noqa: E402
 # Die Test-Datenbank liegt in einem temporären Ordner. Die echte zutritt.db bleibt unberührt.

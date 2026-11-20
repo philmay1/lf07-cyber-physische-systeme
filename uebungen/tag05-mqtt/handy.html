@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="de">
+<head>
+<!-- Zeichensatz UTF-8, damit Umlaute richtig erscheinen. -->
+<meta charset="utf-8">
+<!-- Auf dem Handy in voller Breite anzeigen, nicht hineinzoomen. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<!-- Titel im Browser-Tab. -->
+<title>SENTINEL Funk</title>
+<style>
+  /* Farben an einer Stelle, damit alles zusammenpasst. */
+  :root { --bg:#0b0f14; --karte:#141b24; --rand:#243142; --text:#e6edf3; --leise:#8b9bb0;
+          --gruen:#2ee59d; --rot:#ff3b4e; --gelb:#ffc93c; --blau:#3db8ff; }
+  /* Grundlayout: dunkler Hintergrund, Systemschrift, kein Rand. */
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.4 system-ui, sans-serif; }
+  /* Inhalt mittig, höchstens 480 px breit, 16 px Abstand am Rand. */
+  main { max-width:480px; margin:0 auto; padding:16px; }
+  /* Kopfzeile mit Titel und Verbindungsanzeige. */
+  header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  /* Titel in Großbuchstaben mit Abstand zwischen den Buchstaben. */
+  h1 { font-size:18px; letter-spacing:.15em; margin:0; }
+  /* Verbindungs-Punkt: grau = getrennt. */
+  #status { font-size:13px; color:var(--leise); display:flex; align-items:center; gap:6px; }
+  #status::before { content:""; width:10px; height:10px; border-radius:50%; background:#555; }
+  /* Grün leuchtend = verbunden. */
+  #status.an::before { background:var(--gruen); box-shadow:0 0 10px var(--gruen); }
+  /* Karten: dunkle Kästen mit abgerundeten Ecken. */
+  section { background:var(--karte); border:1px solid var(--rand); border-radius:14px; padding:14px; margin-bottom:14px; }
+  /* Überschrift in jeder Karte. */
+  h2 { font-size:13px; text-transform:uppercase; letter-spacing:.12em; color:var(--leise); margin:0 0 10px; }
+  /* Eingabefeld für den Namen. */
+  input[type=text] { width:100%; box-sizing:border-box; padding:12px; font-size:18px; border-radius:10px;
+                     border:1px solid var(--rand); background:#0e141b; color:var(--text); }
+  /* Raster für die vier großen Knöpfe: zwei nebeneinander. */
+  .knoepfe { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  /* Alle Knöpfe: groß, gut zu treffen. */
+  button { font:inherit; font-size:18px; padding:16px 8px; border-radius:12px; border:1px solid var(--rand);
+           background:#1b2532; color:var(--text); cursor:pointer; }
+  /* Beim Drücken kurz kleiner werden: man merkt, dass es geklappt hat. */
+  button:active { transform:scale(.95); }
+  /* Gesperrt, solange keine Verbindung besteht. */
+  button:disabled { opacity:.4; }
+  /* Schieberegler in voller Breite. */
+  input[type=range] { width:100%; accent-color:var(--blau); }
+  /* Zeile mit Regler-Wert und Senden-Knopf. */
+  .zeile { display:flex; align-items:center; gap:10px; margin-top:8px; }
+  /* Große Zahl neben dem Regler. */
+  #wachWert { font-size:28px; font-weight:700; min-width:60px; }
+  /* PIN-Anzeige: Sternchen statt Ziffern. */
+  #pinAnzeige { font:700 30px/1 ui-monospace, monospace; letter-spacing:.3em; text-align:center;
+                padding:12px; border-radius:10px; background:#0e141b; margin-bottom:10px; min-height:30px; }
+  /* Ziffernblock wie am Keypad: drei Spalten. */
+  .pad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  /* Ziffern groß und fett. */
+  .pad button { font-size:24px; font-weight:700; padding:14px 0; }
+  /* Antwort der Zutrittskontrolle. */
+  #antwort { margin-top:10px; padding:12px; border-radius:10px; text-align:center; font-weight:700; display:none; }
+  /* Grün bei richtiger PIN, gelb bei falscher, rot bei Sperre. */
+  #antwort.ok { display:block; background:rgba(46,229,157,.15); color:var(--gruen); }
+  #antwort.falsch { display:block; background:rgba(255,201,60,.15); color:var(--gelb); }
+  #antwort.gesperrt { display:block; background:rgba(255,59,78,.2); color:var(--rot); animation:blink .5s 4; }
+  /* Blinken für die Sperre. */
+  @keyframes blink { 50% { opacity:.3; } }
+  /* Hinweis-Leiste unten ("gesendet"). */
+  #toast { position:fixed; left:50%; bottom:20px; transform:translate(-50%, 200%); background:var(--gruen);
+           color:#002; padding:10px 18px; border-radius:30px; font-weight:700; transition:transform .25s; }
+  /* Sichtbar: nach oben in den Bildschirm schieben. */
+  #toast.zeigen { transform:translate(-50%, 0); }
+  /* Kleiner grauer Text. */
+  .klein { font-size:13px; color:var(--leise); }
+</style>
+</head>
+<body>
+<main>
+  <!-- Kopf: Name der Übung und Verbindungsstatus. -->
+  <header><h1>SENTINEL FUNK</h1><span id="status">verbinde ...</span></header>
+
+  <!-- Name des Absenders. Er erscheint auf dem Beamer und in der Datenbank. -->
+  <section>
+    <h2>Dein Name</h2>
+    <input id="name" type="text" maxlength="16" placeholder="z. B. Lisa" autocomplete="off">
+    <p class="klein">Du bist ein MQTT-Client. Jeder Knopf schickt ein Event an Mosquitto auf dem Pi.</p>
+  </section>
+
+  <!-- Vier Knöpfe, jeder ist ein Event auf lf07/handy/<name>/knopf. -->
+  <section>
+    <h2>Event senden</h2>
+    <div class="knoepfe">
+      <button data-wert="👋 Hallo">👋 Hallo</button>
+      <button data-wert="👍 Verstanden">👍 Verstanden</button>
+      <button data-wert="☕ Pause!">☕ Pause!</button>
+      <button data-wert="🔥 Wow">🔥 Wow</button>
+    </div>
+  </section>
+
+  <!-- Ein Messwert: wie wach bin ich (0 bis 100). -->
+  <section>
+    <h2>Messwert: Wie wach bist du?</h2>
+    <input id="wach" type="range" min="0" max="100" value="70">
+    <div class="zeile"><span id="wachWert">70</span><button id="wachSenden" style="flex:1">Wert senden</button></div>
+  </section>
+
+  <!-- PIN-Feld: geht an die echte Zutrittskontrolle (3 Fehlversuche = Sperre). -->
+  <section>
+    <h2>Knack den Tresor</h2>
+    <div id="pinAnzeige"></div>
+    <div class="pad" id="pad"></div>
+    <div id="antwort"></div>
+    <p class="klein">Die PIN geht per MQTT an die SENTINEL-Zutrittskontrolle. In der Datenbank landet sie nur als ****.</p>
+  </section>
+
+  <!-- Zähler, wie viele Events dieses Handy geschickt hat. -->
+  <p class="klein">Von diesem Handy gesendet: <b id="zaehler">0</b></p>
+</main>
+<!-- Hinweis-Leiste. -->
+<div id="toast">gesendet ✓</div>
+
+<!-- MQTT-Bibliothek für den Browser (liegt auf dem Pi, kein Internet nötig). -->
+<script src="/static/mqtt.min.js"></script>
+<script>
+// Kurzschreibweise: Element über seine id holen.
+const $ = id => document.getElementById(id);
+// Eigene Kennung dieses Handys, nur Buchstaben und Ziffern (für die Antwort-Adresse).
+const kennung = 'h' + Math.random().toString(36).slice(2, 10);
+// Zähler der gesendeten Events.
+let gesendet = 0;
+// Die gerade getippte PIN.
+let pin = '';
+
+// Gespeicherten Namen holen. try/catch: im privaten Modus kann der Speicher fehlen.
+try { $('name').value = localStorage.getItem('funkName') || ''; } catch (e) {}
+// Name bei jeder Änderung merken.
+$('name').addEventListener('input', () => { try { localStorage.setItem('funkName', $('name').value); } catch (e) {} });
+
+// Name für Topics säubern: nur Buchstaben und Ziffern, sonst "Gast".
+function name() {
+  // Alles außer a-z, A-Z, 0-9 und Umlauten entfernen, höchstens 16 Zeichen.
+  const n = $('name').value.replace(/[^a-zA-Z0-9äöüÄÖÜß]/g, '').slice(0, 16);
+  // Leerer Name? Dann Gast.
+  return n || 'Gast';
+}
+
+// Mit Mosquitto verbinden: WebSocket auf Port 9001 am selben Rechner, von dem die Seite kommt.
+const client = mqtt.connect('ws://' + location.hostname + ':9001', { clientId: 'handy-' + kennung });
+// Alle Knöpfe zunächst sperren, bis die Verbindung steht.
+const alleKnoepfe = () => document.querySelectorAll('button');
+alleKnoepfe().forEach(b => b.disabled = true);
+
+// Verbindung steht: Anzeige grün, Knöpfe frei, Antwort-Topic abonnieren.
+client.on('connect', () => {
+  $('status').textContent = 'verbunden'; $('status').classList.add('an');
+  alleKnoepfe().forEach(b => b.disabled = false);
+  client.subscribe('lf07/zutritt/antwort/' + kennung);
+});
+// Verbindung weg: Anzeige grau, Knöpfe sperren. mqtt.js verbindet selbst neu.
+client.on('close', () => {
+  $('status').textContent = 'getrennt'; $('status').classList.remove('an');
+  alleKnoepfe().forEach(b => b.disabled = true);
+});
+
+// Ein Event senden: Topic und Wert, verpackt als JSON mit Absender.
+function senden(topic, wert, extra) {
+  // Nachricht bauen. extra fügt weitere Felder hinzu (z. B. die Antwort-Adresse).
+  const nachricht = JSON.stringify(Object.assign({ wert: wert, sender: name() }, extra || {}));
+  // qos 1: Mosquitto bestätigt den Empfang.
+  client.publish(topic, nachricht, { qos: 1 });
+  // Zähler hochzählen und anzeigen.
+  $('zaehler').textContent = ++gesendet;
+  // Kurz vibrieren, falls das Handy das kann.
+  if (navigator.vibrate) navigator.vibrate(30);
+  // "gesendet" einblenden und nach 0,9 s wieder ausblenden.
+  $('toast').classList.add('zeigen');
+  clearTimeout(senden.t); senden.t = setTimeout(() => $('toast').classList.remove('zeigen'), 900);
+}
+
+// Die vier Event-Knöpfe: Wert steht im Attribut data-wert.
+document.querySelectorAll('.knoepfe button').forEach(b =>
+  b.addEventListener('click', () => senden('lf07/handy/' + name() + '/knopf', b.dataset.wert)));
+
+// Regler: Zahl daneben live mitziehen.
+$('wach').addEventListener('input', () => $('wachWert').textContent = $('wach').value);
+// Regler-Wert als Zahl senden.
+$('wachSenden').addEventListener('click', () => senden('lf07/handy/' + name() + '/wachheit', Number($('wach').value)));
+
+// Ziffernblock bauen: 1 bis 9, dann Löschen, 0, Bestätigen.
+['1','2','3','4','5','6','7','8','9','⌫','0','#'].forEach(t => {
+  // Knopf anlegen und beschriften.
+  const b = document.createElement('button'); b.textContent = t; b.disabled = true;
+  // Was beim Tippen passiert.
+  b.addEventListener('click', () => {
+    // Löschen: PIN leeren.
+    if (t === '⌫') pin = '';
+    // Raute: PIN senden, mit Antwort-Adresse, dann leeren.
+    else if (t === '#') { if (pin) senden('lf07/zutritt/pin', pin, { antwort: kennung }); pin = ''; }
+    // Ziffer: anhängen (höchstens 8).
+    else if (pin.length < 8) pin += t;
+    // Nur Sternchen zeigen.
+    $('pinAnzeige').textContent = '•'.repeat(pin.length);
+  });
+  // Knopf in den Block setzen.
+  $('pad').appendChild(b);
+});
+
+// Antwort der Zutrittskontrolle anzeigen.
+client.on('message', (topic, daten) => {
+  // JSON lesen. Kaputte Nachrichten ignorieren.
+  let a; try { a = JSON.parse(daten.toString()); } catch (e) { return; }
+  // Text je nach Ergebnis.
+  const texte = {
+    ok: '✓ ZUTRITT für ' + a.name,
+    falsch: '✗ Falsche PIN (' + a.fehlversuche + ' von ' + a.max + ')',
+    gesperrt: '⛔ GESPERRT, noch ' + a.rest + ' s'
+  };
+  // Feld füllen und passend einfärben.
+  $('antwort').textContent = texte[a.ergebnis] || a.ergebnis;
+  $('antwort').className = a.ergebnis;
+  // Bei Sperre lang vibrieren.
+  if (a.ergebnis === 'gesperrt' && navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+});
+</script>
+</body>
+</html>

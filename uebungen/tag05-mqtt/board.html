@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="de">
+<head>
+<!-- Zeichensatz UTF-8, damit Umlaute richtig erscheinen. -->
+<meta charset="utf-8">
+<!-- Breite passt sich dem Bildschirm an (Beamer, Notebook). -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Titel im Browser-Tab. -->
+<title>SENTINEL Funk</title>
+<style>
+  /* Farben an einer Stelle. Dunkel, weil es am Beamer am besten wirkt. */
+  :root { --bg:#070a0f; --karte:#0f151d; --rand:#1d2836; --text:#e6edf3; --leise:#7d8da3;
+          --gruen:#2ee59d; --rot:#ff3b4e; --gelb:#ffc93c; --blau:#3db8ff; --lila:#a78bfa; }
+  /* Ganze Seite: kein Rand, dunkel, Systemschrift, nicht scrollen müssen. */
+  html, body { margin:0; background:var(--bg); color:var(--text); font:15px/1.4 system-ui, sans-serif; }
+  /* Feines Raster im Hintergrund: sieht nach Leitstelle aus. */
+  body { background-image:linear-gradient(rgba(61,184,255,.04) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(61,184,255,.04) 1px, transparent 1px);
+         background-size:32px 32px; min-height:100vh; }
+  /* Innenabstand und Spalten-Aufbau der Seite. */
+  main { padding:18px 22px; display:grid; gap:14px; }
+
+  /* ---------- Kopfzeile ---------- */
+  header { display:flex; align-items:center; gap:16px; }
+  /* Titel mit grünem Leuchten. */
+  h1 { margin:0; font-size:26px; letter-spacing:.22em; text-shadow:0 0 18px rgba(46,229,157,.45); }
+  /* Untertitel daneben. */
+  .unter { color:var(--leise); font-size:14px; }
+  /* Alles Weitere nach rechts schieben. */
+  .rechts { margin-left:auto; display:flex; gap:10px; align-items:center; }
+  /* Uhr in fester Zeichenbreite, damit nichts zappelt. */
+  #uhr { font:600 20px ui-monospace, monospace; color:var(--blau); }
+  /* Verbindungsanzeige zum Broker. */
+  #status { font-size:13px; padding:5px 10px; border-radius:20px; border:1px solid var(--rand); color:var(--leise); }
+  /* Grün = Board ist selbst als MQTT-Client verbunden. */
+  #status.an { color:var(--gruen); border-color:rgba(46,229,157,.5); }
+  /* Kleine Knöpfe in der Kopfzeile. */
+  header button { font:inherit; font-size:13px; padding:6px 12px; border-radius:8px; border:1px solid var(--rand);
+                  background:#131c27; color:var(--text); cursor:pointer; }
+
+  /* ---------- Kennzahl-Kacheln ---------- */
+  .kacheln { display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; }
+  /* Eine Kachel: dunkler Kasten. */
+  .kachel { background:var(--karte); border:1px solid var(--rand); border-radius:14px; padding:12px 16px; }
+  /* Beschriftung klein und grau. */
+  .kachel small { display:block; color:var(--leise); font-size:12px; text-transform:uppercase; letter-spacing:.12em; }
+  /* Die große Zahl. tabular-nums: alle Ziffern gleich breit. */
+  .kachel b { font-size:40px; font-variant-numeric:tabular-nums; line-height:1.15; }
+  /* Fortschrittsbalken zum Ziel 20 Events. */
+  .balken { height:8px; background:#1a2430; border-radius:8px; overflow:hidden; margin-top:6px; }
+  /* Füllung des Balkens, wächst weich mit. */
+  #balken { height:100%; width:0; background:linear-gradient(90deg, var(--blau), var(--gruen)); transition:width .4s; }
+  /* Letzter Wert darf lang sein: kleiner und abgeschnitten. */
+  #letzter { font-size:22px !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
+
+  /* ---------- Bühne: Sender -> Broker -> Datenbank ---------- */
+  .buehne { position:relative; height:330px; background:var(--karte); border:1px solid var(--rand); border-radius:14px;
+            display:grid; grid-template-columns:1fr 1fr 1fr; align-items:center; overflow:hidden; }
+  /* Spaltenüberschriften oben in der Bühne. */
+  .spalte { height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; }
+  .spalte > h3 { position:absolute; top:10px; margin:0; font-size:12px; color:var(--leise); letter-spacing:.15em; text-transform:uppercase; }
+  /* Liste der Sender-Chips links. */
+  #sender { display:flex; flex-direction:column; gap:7px; width:80%; }
+  /* Ein Sender-Chip: farbiger Punkt, Name, Zähler. */
+  .chip { display:flex; align-items:center; gap:8px; padding:7px 12px; border-radius:30px; background:#131c27;
+          border:1px solid var(--rand); font-size:15px; transition:box-shadow .3s; }
+  /* Farbiger Punkt im Chip (Farbe kommt pro Sender aus dem Skript). */
+  .chip i { width:11px; height:11px; border-radius:50%; background:var(--farbe); box-shadow:0 0 8px var(--farbe); }
+  /* Zähler rechts im Chip. */
+  .chip span { margin-left:auto; color:var(--leise); font-variant-numeric:tabular-nums; }
+  /* Kurzes Aufleuchten, wenn der Sender gerade etwas geschickt hat. */
+  .chip.blitz { box-shadow:0 0 0 2px var(--farbe), 0 0 22px var(--farbe); }
+  /* Platzhalter, solange noch niemand gesendet hat. */
+  .leer { color:var(--leise); font-size:14px; text-align:center; }
+
+  /* Der Broker in der Mitte: runder Knoten mit drehendem Ring. */
+  .broker { width:170px; height:170px; border-radius:50%; display:grid; place-items:center; text-align:center; position:relative;
+            background:radial-gradient(circle, #16263a 0%, #0c131c 70%); border:2px solid var(--blau);
+            box-shadow:0 0 30px rgba(61,184,255,.25); transition:box-shadow .2s, transform .2s; }
+  /* Gestrichelter Ring, der sich langsam dreht. */
+  .broker::before { content:""; position:absolute; inset:-14px; border-radius:50%; border:2px dashed rgba(61,184,255,.4);
+                    animation:drehen 14s linear infinite; }
+  @keyframes drehen { to { transform:rotate(360deg); } }
+  /* Puls, wenn ein Paket ankommt. */
+  .broker.puls { box-shadow:0 0 60px rgba(61,184,255,.8); transform:scale(1.05); }
+  /* Name und Ports im Broker. */
+  .broker b { font-size:20px; letter-spacing:.06em; }
+  .broker small { color:var(--leise); font-size:12px; }
+  /* Letztes Topic unter dem Broker. */
+  #topic { margin-top:24px; font:13px ui-monospace, monospace; color:var(--blau); max-width:95%; text-align:center;
+           white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-height:18px; }
+
+  /* Die Datenbank rechts: eine Tonne (Zylinder) aus CSS. */
+  .tonne { width:130px; height:150px; position:relative; transition:transform .2s; }
+  /* Körper der Tonne. */
+  .tonne .koerper { position:absolute; inset:18px 0 0 0; background:linear-gradient(90deg, #12301f, #1c4a31 50%, #12301f);
+                    border:2px solid var(--gruen); border-top:none; border-radius:0 0 65px 65px / 0 0 20px 20px;
+                    display:grid; place-items:center; }
+  /* Deckel der Tonne (Ellipse). */
+  .tonne .deckel { position:absolute; left:0; right:0; top:0; height:36px; border-radius:50%; background:#1f5538;
+                   border:2px solid var(--gruen); z-index:1; }
+  /* Zahl in der Tonne. */
+  #dbZahl { font-size:34px; font-weight:800; color:var(--gruen); font-variant-numeric:tabular-nums; margin-top:14px; }
+  /* Puls beim Schreiben. */
+  .tonne.puls { transform:scale(1.07); }
+  /* Dateiname unter der Tonne. */
+  .dbname { margin-top:12px; font:13px ui-monospace, monospace; color:var(--gruen); }
+
+  /* Ein fliegendes Datenpaket. Position und Farbe setzt das Skript. */
+  .paket { position:absolute; left:0; top:0; width:14px; height:14px; border-radius:4px; background:var(--farbe);
+           box-shadow:0 0 14px var(--farbe), 0 0 30px var(--farbe); pointer-events:none; z-index:5; }
+
+  /* ---------- Untere Reihe: SQL-Tabelle und QR-Code ---------- */
+  .unten { display:grid; grid-template-columns:2.2fr 1fr; gap:14px; }
+  /* Kasten um Tabelle und QR. */
+  .panel { background:var(--karte); border:1px solid var(--rand); border-radius:14px; padding:12px 16px; }
+  /* Die SQL-Abfrage als Code über der Tabelle. */
+  .sql { font:13px ui-monospace, monospace; color:var(--lila); margin:0 0 8px; }
+  /* Tabelle über die volle Breite, feste Spaltenbreiten. */
+  table { width:100%; border-collapse:collapse; font-size:14px; table-layout:fixed; }
+  /* Kopfzeile der Tabelle. */
+  th { text-align:left; color:var(--leise); font-weight:500; font-size:12px; text-transform:uppercase; padding:4px 6px; border-bottom:1px solid var(--rand); }
+  /* Zellen: eine Zeile, zu lange Texte mit ... */
+  td { padding:5px 6px; border-bottom:1px solid #141d28; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  /* Spalten id, Zeit und Topic in Code-Schrift. */
+  td:nth-child(-n+3) { font-family:ui-monospace, monospace; font-size:13px; }
+  /* Neue Zeile leuchtet grün auf und verblasst. */
+  tr.neu td { animation:neu 1.6s ease-out; }
+  @keyframes neu { from { background:rgba(46,229,157,.35); } to { background:transparent; } }
+  /* QR-Kasten: alles mittig. */
+  .qr { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:8px; }
+  /* Weißer Hintergrund, damit Handys den QR-Code sicher erkennen. */
+  .qr img { width:190px; height:190px; background:#fff; border-radius:10px; padding:6px; }
+  /* Überschrift im QR-Kasten. */
+  .qr b { font-size:20px; letter-spacing:.08em; }
+  /* Adresse unter dem QR-Code. */
+  #url { font:13px ui-monospace, monospace; color:var(--blau); word-break:break-all; }
+
+  /* ---------- Vollbild-Einblendungen ---------- */
+  .vollbild { position:fixed; inset:0; display:none; place-items:center; text-align:center; z-index:20; }
+  /* Sichtbar. */
+  .vollbild.an { display:grid; }
+  /* Ziel erreicht: dunkelgrün durchscheinend. */
+  #ziel { background:rgba(4,30,18,.88); }
+  /* Großer Text, der hineinspringt. */
+  #ziel h2 { font-size:86px; margin:0; color:var(--gruen); text-shadow:0 0 40px rgba(46,229,157,.8); animation:rein .6s cubic-bezier(.2,1.6,.4,1); }
+  #ziel p { font-size:28px; margin:8px 0 0; }
+  @keyframes rein { from { transform:scale(.3); opacity:0; } }
+  /* Sperre: rot, mit Warnband-Streifen. */
+  #alarm { background:repeating-linear-gradient(45deg, rgba(255,59,78,.92) 0 40px, rgba(60,0,8,.92) 40px 80px); }
+  #alarm div { background:#12030a; padding:30px 50px; border:3px solid var(--rot); border-radius:16px; }
+  #alarm h2 { font-size:64px; margin:0; color:var(--rot); letter-spacing:.08em; animation:wackeln .15s 10; }
+  #alarm p { font-size:24px; margin:10px 0 0; }
+  @keyframes wackeln { 25% { transform:translateX(-6px); } 75% { transform:translateX(6px); } }
+  /* Konfetti-Teilchen. */
+  .konfetti { position:fixed; top:-20px; width:10px; height:16px; z-index:30; pointer-events:none; }
+
+  /* Wer Bewegung im System abgeschaltet hat, bekommt keine Animationen. */
+  @media (prefers-reduced-motion: reduce) { *, *::before { animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <!-- Kopfzeile: Titel, Uhr, Verbindung, Knöpfe. -->
+  <header>
+    <h1>SENTINEL FUNK</h1>
+    <span class="unter">MQTT live · Broker Mosquitto auf dem Raspberry Pi · Logger schreibt in SQLite</span>
+    <div class="rechts">
+      <span id="status">Broker: verbinde ...</span>
+      <button id="ton">🔈 Ton an</button>
+      <button id="reset" title="Zähler 'seit Start' auf 0">↺ Zähler 0</button>
+      <span id="uhr">--:--:--</span>
+    </div>
+  </header>
+
+  <!-- Vier Kennzahlen. -->
+  <section class="kacheln">
+    <div class="kachel"><small>Events in der Datenbank</small><b id="gesamt">0</b></div>
+    <div class="kachel"><small>Seit Start · Ziel 20</small><b id="seit">0</b><div class="balken"><div id="balken"></div></div></div>
+    <div class="kachel"><small>Sender aktiv</small><b id="anzSender">0</b></div>
+    <div class="kachel"><small>Letzter Wert</small><b id="letzter">–</b></div>
+  </section>
+
+  <!-- Bühne: links Sender, Mitte Broker, rechts Datenbank. -->
+  <section class="buehne" id="buehne">
+    <div class="spalte"><h3>Sender (Publisher)</h3><div id="sender"><div class="leer">Noch kein Sender.<br>QR-Code scannen!</div></div></div>
+    <div class="spalte"><h3>Broker</h3>
+      <div class="broker" id="broker"><div><b>Mosquitto</b><br><small>:1883 MQTT · :9001 WebSocket</small></div></div>
+      <div id="topic">Topic lf07/#</div>
+    </div>
+    <div class="spalte"><h3>Subscriber → Datenbank</h3>
+      <div class="tonne" id="tonne"><div class="deckel"></div><div class="koerper"><span id="dbZahl">0</span></div></div>
+      <div class="dbname">mqtt_logger.py → mqtt.db</div>
+    </div>
+  </section>
+
+  <!-- Unten: die echte Tabelle aus der Datenbank und der QR-Code. -->
+  <section class="unten">
+    <div class="panel">
+      <p class="sql">SELECT id, strftime('%H:%M:%S', zeit, 'unixepoch', 'localtime'), topic, sender, wert FROM events ORDER BY id DESC LIMIT 10;</p>
+      <table>
+        <colgroup><col style="width:7%"><col style="width:13%"><col style="width:36%"><col style="width:17%"><col></colgroup>
+        <thead><tr><th>id</th><th>zeit</th><th>topic</th><th>sender</th><th>wert</th></tr></thead>
+        <tbody id="zeilen"></tbody>
+      </table>
+    </div>
+    <div class="panel qr">
+      <b>MACH MIT!</b>
+      <img id="qrbild" src="/qr.svg" alt="QR-Code zur Handyseite">
+      <span id="url">...</span>
+      <span class="unter">Gleiches WLAN wie der Pi</span>
+    </div>
+  </section>
+</main>
+
+<!-- Einblendung: 20 Events erreicht. -->
+<div class="vollbild" id="ziel"><div><h2>20 EVENTS ✓</h2><p>Sender → Mosquitto → Subscriber → SQLite. Aufgabe erfüllt.</p></div></div>
+<!-- Einblendung: Zutrittskontrolle per MQTT gesperrt. -->
+<div class="vollbild" id="alarm"><div><h2>⛔ SENTINEL GESPERRT</h2><p id="alarmText">3 falsche PINs per MQTT</p></div></div>
+
+<!-- MQTT-Bibliothek für den Browser (liegt auf dem Pi, kein Internet nötig). -->
+<script src="/static/mqtt.min.js"></script>
+<script>
+// Kurzschreibweise: Element über seine id holen.
+const $ = id => document.getElementById(id);
+// Möchte das System keine Bewegung? Dann lassen wir die Pakete weg.
+const ruhig = matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Ziel der Aufgabe: so viele Events.
+const ZIEL = 20;
+// Höchste id, die das Board schon kennt. -1 heißt: noch nichts geladen.
+let letzteId = -1;
+// id, ab der "seit Start" gezählt wird.
+let startId = null;
+// Wurde die 20er-Feier schon gezeigt?
+let gefeiert = false;
+// Sender-Chips: Name -> { el, anzahl }.
+const sender = new Map();
+// Wer zuletzt eine PIN geschickt hat (für den Alarmtext).
+let letzterPinSender = '';
+// Tonquelle, entsteht erst nach Klick auf "Ton an" (Browser-Regel).
+let audio = null;
+
+// ---------- Uhr ----------
+// Jede Sekunde die Uhrzeit neu schreiben.
+setInterval(() => $('uhr').textContent = new Date().toLocaleTimeString('de-DE'), 1000);
+
+// ---------- Ton ----------
+// Klick auf "Ton an": Audio-Kontext anlegen.
+$('ton').addEventListener('click', () => { audio = audio || new AudioContext(); audio.resume(); $('ton').textContent = '🔊 Ton an'; });
+// Spielt einen kurzen Ton: Frequenz in Hz, Dauer in s, Wellenform, Lautstärke.
+function ton(freq, dauer, form, laut) {
+  // Ohne Klick auf "Ton an" bleibt es still.
+  if (!audio) return;
+  // Oszillator (Tonerzeuger) und Lautstärkeregler anlegen.
+  const o = audio.createOscillator(), g = audio.createGain();
+  // Wellenform und Tonhöhe einstellen.
+  o.type = form || 'sine'; o.frequency.value = freq;
+  // Lautstärke: sofort an, dann schnell ausblenden (klingt wie ein "Blip").
+  g.gain.setValueAtTime(laut || .08, audio.currentTime);
+  g.gain.exponentialRampToValueAtTime(.0001, audio.currentTime + dauer);
+  // Verkabeln: Oszillator -> Regler -> Lautsprecher.
+  o.connect(g); g.connect(audio.destination);
+  // Starten und nach der Dauer stoppen.
+  o.start(); o.stop(audio.currentTime + dauer);
+}
+
+// ---------- Farben ----------
+// Macht aus einem Namen immer dieselbe Farbe (einfache Prüfsumme -> Farbton).
+function farbe(name) {
+  // Prüfsumme über alle Zeichen.
+  let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  // Farbton 0 bis 359, kräftig und hell.
+  return `hsl(${h % 360} 85% 60%)`;
+}
+
+// ---------- Datenpaket fliegen lassen ----------
+// Mittelpunkt eines Elements relativ zur Bühne.
+function mitte(el, rechtsKante) {
+  // Lage von Element und Bühne auf dem Bildschirm.
+  const r = el.getBoundingClientRect(), b = $('buehne').getBoundingClientRect();
+  // x: Mitte oder rechte Kante, y: Mitte. Minus 7 = halbe Paketgröße.
+  return { x: (rechtsKante ? r.right : r.left + r.width / 2) - b.left - 7, y: r.top + r.height / 2 - b.top - 7 };
+}
+// Lässt ein Paket von a nach b fliegen und ruft danach fertig() auf.
+function fliegen(von, nach, col, fertig) {
+  // Bei "ruhig" sofort fertig, ohne Animation.
+  if (ruhig) { fertig && fertig(); return; }
+  // Paket anlegen, Farbe setzen, in die Bühne hängen.
+  const p = document.createElement('div'); p.className = 'paket'; p.style.setProperty('--farbe', col);
+  $('buehne').appendChild(p);
+  // Leichter Bogen: Mittelpunkt etwas nach oben versetzt.
+  const mx = (von.x + nach.x) / 2, my = Math.min(von.y, nach.y) - 40;
+  // Flug in drei Stationen, 650 ms, mit Drehung.
+  p.animate([
+    { transform: `translate(${von.x}px, ${von.y}px) rotate(0deg) scale(.6)` },
+    { transform: `translate(${mx}px, ${my}px) rotate(180deg) scale(1.2)` },
+    { transform: `translate(${nach.x}px, ${nach.y}px) rotate(360deg) scale(.8)` }
+  ], { duration: 650, easing: 'ease-in-out' }).onfinish = () => { p.remove(); fertig && fertig(); };
+}
+// Element kurz pulsieren lassen (Klasse an, nach 180 ms wieder ab).
+function puls(el, klasse) { el.classList.add(klasse); setTimeout(() => el.classList.remove(klasse), 180); }
+
+// ---------- Sender-Chips ----------
+// Holt den Chip eines Senders oder legt ihn neu an.
+function chip(name) {
+  // Gibt es ihn schon? Dann zurückgeben.
+  if (sender.has(name)) return sender.get(name);
+  // Platzhalter "Noch kein Sender" entfernen.
+  const leer = document.querySelector('#sender .leer'); if (leer) leer.remove();
+  // Höchstens 7 Chips: den ältesten entfernen.
+  if (sender.size >= 7) { const [alt, s] = sender.entries().next().value; s.el.remove(); sender.delete(alt); }
+  // Chip bauen: Punkt, Name, Zähler.
+  const el = document.createElement('div'); el.className = 'chip';
+  el.style.setProperty('--farbe', farbe(name));
+  el.innerHTML = '<i></i><b></b><span>0</span>'; el.querySelector('b').textContent = name;
+  // Oben einfügen und merken.
+  $('sender').prepend(el);
+  const s = { el, anzahl: 0 }; sender.set(name, s);
+  // Anzahl der Sender anzeigen.
+  $('anzSender').textContent = sender.size;
+  return s;
+}
+
+// ---------- Das Board als MQTT-Client ----------
+// Mit Mosquitto über WebSocket verbinden (gleicher Rechner wie die Seite).
+const client = mqtt.connect('ws://' + location.hostname + ':9001', { clientId: 'board-' + Math.random().toString(36).slice(2, 8) });
+// Verbunden: alles unter lf07/ abonnieren und Status grün.
+client.on('connect', () => { client.subscribe('lf07/#'); $('status').textContent = 'Broker: verbunden'; $('status').classList.add('an'); });
+// Getrennt: Status zurück auf grau.
+client.on('close', () => { $('status').textContent = 'Broker: getrennt'; $('status').classList.remove('an'); });
+// Jede Nachricht: Paket vom Sender zum Broker fliegen lassen.
+client.on('message', (topic, daten) => {
+  // Text der Nachricht.
+  const text = daten.toString();
+  // Standard: Sender ist der zweite Teil des Topics, der Wert der ganze Text.
+  let name = topic.split('/')[1] || '?', wert = text, j = null;
+  // JSON mit wert/sender? Dann diese Angaben nehmen.
+  try { j = JSON.parse(text); } catch (e) {}
+  if (j && typeof j === 'object' && 'wert' in j) { wert = String(j.wert); name = j.sender || name; }
+  // Antworten der Zutrittskontrolle kommen von SENTINEL selbst.
+  if (topic.startsWith('lf07/zutritt/antwort/')) { name = 'SENTINEL'; wert = j ? j.ergebnis : text; }
+  // PINs nie zeigen.
+  if (topic.endsWith('/pin')) { letzterPinSender = name; wert = 'PIN ' + '*'.repeat(Math.min(wert.length, 8)); }
+  // Chip holen, Zähler hoch, kurz aufleuchten.
+  const s = chip(name); s.el.querySelector('span').textContent = ++s.anzahl;
+  s.el.classList.add('blitz'); setTimeout(() => s.el.classList.remove('blitz'), 300);
+  // Paket vom Chip zum Broker. Bei Ankunft: Broker pulsiert, Topic erscheint, Ton.
+  const col = farbe(name);
+  fliegen(mitte(s.el, true), mitte($('broker')), col, () => {
+    puls($('broker'), 'puls'); $('topic').textContent = topic; ton(500 + parseInt(col.slice(4)), .12, 'triangle');
+  });
+  // Letzten Wert in der Kachel zeigen.
+  $('letzter').textContent = wert;
+  // Zutrittskontrolle meldet eine NEUE Sperre (gerade ausgelöst): großer roter Alarm.
+  if (topic.startsWith('lf07/zutritt/antwort/') && j && j.ergebnis === 'gesperrt' && j.neu) alarm(j.rest);
+});
+
+// ---------- Datenbank abfragen ----------
+// Holt alle 400 ms die neuesten Zeilen aus mqtt.db (über Flask).
+async function laden() {
+  // Anfrage an /api/events. Klappt es nicht, beim nächsten Mal wieder versuchen.
+  let d; try { d = await (await fetch('/api/events')).json(); } catch (e) { return; }
+  // Höchste id in der Antwort (0, wenn die Tabelle leer ist).
+  const maxId = d.events.length ? d.events[0].id : 0;
+  // Erster Aufruf: Startpunkt merken, noch nichts animieren.
+  if (letzteId < 0) { letzteId = maxId; startId = maxId; }
+  // Neue Zeilen = id größer als die bisher bekannte.
+  const neue = d.events.filter(e => e.id > letzteId);
+  // Für jede neue Zeile ein Paket vom Broker in die Tonne, leicht versetzt.
+  neue.reverse().forEach((e, i) => setTimeout(() =>
+    fliegen(mitte($('broker')), mitte($('tonne')), '#2ee59d', () => { puls($('tonne'), 'puls'); ton(880, .18, 'sine', .06); }), i * 120));
+  // Tabelle neu schreiben, neue Zeilen markieren.
+  $('zeilen').innerHTML = '';
+  d.events.forEach(e => {
+    // Zeile anlegen. textContent statt innerHTML: Werte von Handys können kein HTML einschleusen.
+    const tr = document.createElement('tr'); if (e.id > letzteId) tr.className = 'neu';
+    [e.id, e.uhrzeit, e.topic, e.sender, e.wert].forEach(w => { const td = document.createElement('td'); td.textContent = w; tr.appendChild(td); });
+    $('zeilen').appendChild(tr);
+  });
+  // Jetzt kennen wir alles bis maxId. Wurde die Tabelle geleert, Startpunkte neu setzen.
+  if (maxId < letzteId) startId = 0;
+  letzteId = maxId;
+  // Zahlen aktualisieren.
+  $('gesamt').textContent = d.anzahl; $('dbZahl').textContent = d.anzahl;
+  // "Seit Start": wie viele ids seit dem Startpunkt dazugekommen sind.
+  const seit = Math.max(0, maxId - startId);
+  $('seit').textContent = seit;
+  // Balken füllen (höchstens 100 %).
+  $('balken').style.width = Math.min(100, seit / ZIEL * 100) + '%';
+  // Ziel erreicht und noch nicht gefeiert? Feiern.
+  if (seit >= ZIEL && !gefeiert) { gefeiert = true; feiern(); }
+}
+// Alle 400 ms abfragen und sofort einmal.
+setInterval(laden, 400); laden();
+
+// "Zähler 0": ab jetzt neu bis 20 zählen.
+$('reset').addEventListener('click', () => { startId = letzteId; gefeiert = false; laden(); });
+
+// ---------- Einblendungen ----------
+// 20 Events: grüne Einblendung, Fanfare, Konfetti.
+function feiern() {
+  $('ziel').classList.add('an');
+  // Kleine Tonleiter nach oben.
+  [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => ton(f, .35, 'triangle', .1), i * 140));
+  // 120 Konfetti-Teilchen in zufälligen Farben fallen lassen.
+  if (!ruhig) for (let i = 0; i < 120; i++) {
+    const k = document.createElement('div'); k.className = 'konfetti';
+    k.style.left = Math.random() * 100 + 'vw'; k.style.background = `hsl(${Math.random() * 360} 90% 60%)`;
+    document.body.appendChild(k);
+    k.animate([{ transform: 'translateY(0) rotate(0)' }, { transform: `translateY(110vh) rotate(${Math.random() * 900}deg)` }],
+              { duration: 1800 + Math.random() * 1800, delay: Math.random() * 500, easing: 'ease-in' }).onfinish = () => k.remove();
+  }
+  // Nach 4 s wieder ausblenden.
+  setTimeout(() => $('ziel').classList.remove('an'), 4000);
+}
+// Sperre: rote Einblendung mit Sirene.
+function alarm(rest) {
+  $('alarmText').textContent = `3 falsche PINs per MQTT${letzterPinSender ? ', zuletzt von ' + letzterPinSender : ''} · gesperrt für ${rest} s`;
+  $('alarm').classList.add('an');
+  // Sirene: abwechselnd hoher und tiefer Ton.
+  for (let i = 0; i < 8; i++) setTimeout(() => ton(i % 2 ? 660 : 880, .22, 'sawtooth', .07), i * 230);
+  // Nach 3,5 s ausblenden.
+  setTimeout(() => $('alarm').classList.remove('an'), 3500);
+}
+
+// ---------- QR-Code ----------
+// Adresse der Handyseite holen und anzeigen.
+fetch('/api/info').then(r => r.json()).then(d => $('url').textContent = d.handy_url).catch(() => {});
+// Fehlt die QR-Bibliothek, das Bild ausblenden (die Adresse bleibt sichtbar).
+$('qrbild').addEventListener('error', () => $('qrbild').style.display = 'none');
+</script>
+</body>
+</html>
