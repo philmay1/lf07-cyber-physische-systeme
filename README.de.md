@@ -294,7 +294,7 @@ sequenceDiagram
 
 ## Über mich
 
-Ich mache eine Umschulung zum Fachinformatiker für Systemintegration bei der GFN. In diesem Repo dokumentiere ich, was ich in Lernfeld 7 praktisch umgesetzt habe: von der ersten LED bis zur vernetzten Zutrittskontrolle.
+Ich mache eine Umschulung zum Fachinformatiker für Systemintegration. In diesem Repo dokumentiere ich, was ich in Lernfeld 7 praktisch umgesetzt habe: von der ersten LED bis zur vernetzten Zutrittskontrolle.
 
 ## Lizenz
 

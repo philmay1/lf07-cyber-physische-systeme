@@ -294,7 +294,7 @@ sequenceDiagram
 
 ## About me
 
-I am retraining as an IT specialist for system integration at GFN. This repo documents what I built hands-on in learning field 7, from the first LED to a networked access control.
+I am retraining as an IT specialist for system integration. This repo documents what I built hands-on in learning field 7, from the first LED to a networked access control.
 
 ## License
 
