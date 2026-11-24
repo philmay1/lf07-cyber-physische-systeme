@@ -83,17 +83,19 @@ Die zehn SENTINEL-Projekte aus der Agenda des Lernfelds.
 | Nr. | Projekt | Was es macht | Schwerpunkt | Status |
 |:-:|---|---|---|:-:|
 | 01 | [SENTINEL Projektstart](projekte/01-sentinel-projektstart/) | Schaltet eine Status-LED sicher über einen GPIO-Pin | Vorwiderstand, GPIO-Ausgang | ✅ |
-| 02 | Lokale Materialstation | Erfasst Entnahmen per Taster | Pull-up, Entprellen, Events | ⬜ |
-| 03 | Vernetzte Materialstation | Sendet jede Entnahme als MQTT-Nachricht | MQTT, JSON, Topics | ⬜ |
-| 04 | Sicherheitsmodul Klimaprüfraum | Warnt, bevor jemand einen unsicheren Raum betritt | Sensorwahl, Countdown | ⬜ |
-| 05 | Lokale Zutrittskontrolle | Öffnet ein Schloss nach der richtigen PIN | Keypad, PWM, Servo | ⬜ |
-| 06 | Dynamische Zutrittskontrolle | Prüft PINs gegen eine Datenbank | MariaDB, Argon2 | ⬜ |
+| 02 | [Lokale Materialstation](projekte/02-lokale-materialstation/) | Erfasst Entnahmen per Taster, als Polling und als Event | Pull-up, Entprellen, Events | 🟡 |
+| 03 | [Vernetzte Materialstation](projekte/03-vernetzte-materialstation/) | Sendet jede Entnahme als MQTT-Nachricht nach Vertrag, Leitstelle prüft | MQTT, JSON, Last Will | 🟡 |
+| 04 | [Sicherheitsmodul Klimaprüfraum](projekte/04-sicherheitsmodul-klimapruefraum/) | Alarmiert genau einmal, wenn sich 15 s niemand bewegt | Zustandslogik, Countdown | 🟡 |
+| 05 | [Lokale Zutrittskontrolle](projekte/05-lokale-zutrittskontrolle/) | Öffnet per Servo SG90 nach der richtigen PIN | Keypad, PWM, Servo | 🟡 |
+| 06 | [Dynamische Zutrittskontrolle](projekte/06-dynamische-zutrittskontrolle/) | Prüft PINs gegen MariaDB, fail closed | MariaDB, Argon2, Minimalrechte | 🟡 |
 | 07 | Umweltüberwachung | Protokolliert Klimadaten und reagiert auf Grenzwerte | DHT11, Hysterese | ⬜ |
 | 08 | Gesicherte Transportbox | Verfolgt den Zustand der Box und meldet ihn | Zustandsautomat, LCD | ⬜ |
 | 09 | SENTINEL Release Readiness | Testet das Gesamtsystem und bewertet Risiken | Systemtest, FMEA | ⬜ |
 | 10 | SENTINEL Kundenabnahme | Übergibt das System an den "Kunden" | Abnahme, Präsentation | ⬜ |
 
-<sub>⬜ offen · 🟡 in Arbeit · ✅ fertig</sub>
+<sub>⬜ offen · 🟡 Code fertig und automatisch getestet, Aufbau am Pi offen · ✅ fertig und am Pi getestet</sub>
+
+Ab Projekt 02 teilen sich alle Projekte einen Aufbau und einen [zentralen Pinplan](projekte/README.de.md#zentraler-pinplan) nach dem Anschlussbild des Dozenten. Gemeinsame Bausteine wie der MQTT-Vertrag, das Keypad und die Servo-Tür liegen in [`projekte/gemeinsam/`](projekte/gemeinsam/). Alle automatischen Tests laufen mit `bash projekte/alle_tests.sh`.
 
 ## Übungen
 
@@ -137,7 +139,7 @@ flowchart LR
         direction TB
         B(("MQTT-Broker<br>Mosquitto"))
         C["Dashboard im Browser<br>Flask"]
-        D[("SQLite<br>später MariaDB")]
+        D[("SQLite und MariaDB")]
     end
 
     sensoren --> P
@@ -176,7 +178,7 @@ stateDiagram-v2
 
 ## Lerntagebuch
 
-Was an welchem Tag entstanden ist. Woche 2 ist der Plan laut Agenda.
+Was an welchem Tag entstanden ist. Ab Tag 7 ist es der Plan laut Agenda.
 
 ```mermaid
 timeline
@@ -188,7 +190,7 @@ timeline
         Tag 4 : Ampel dimmen mit PWM ✅
         Tag 5 : Zutrittskontrolle mit Keypad, MQTT-Funk ✅
     section Woche 2
-        Tag 6 : MariaDB und Argon2
+        Tag 6 : MariaDB und Argon2 auf dem Pi ✅ : Projekte 02 bis 06 programmiert 🟡
         Tag 7 : DHT11 und Telemetrie
         Tag 8 : Zustandsautomaten und LCD
         Tag 9 : DevOps, Security, FMEA
@@ -202,7 +204,7 @@ timeline
 - [x] Eine LED per PWM dimmen
 - [x] Geräte per MQTT verbinden (Publisher, Broker, Subscriber)
 - [x] Daten und gehashte PINs in einer SQLite-Datenbank speichern
-- [ ] PINs mit Argon2 in MariaDB speichern
+- [x] PINs mit Argon2 in MariaDB speichern, mit Minimalrechten und fail closed
 - [ ] Sensoren wie den DHT11 auslesen und auf Grenzwerte reagieren
 - [ ] Risiken mit Bedrohungsanalyse und FMEA bewerten
 - [ ] Ein System beim Kunden präsentieren und übergeben
@@ -227,10 +229,13 @@ Jedes Projekt und jede Übung hat denselben Aufbau. So findet man sich überall 
 ```text
 .
 ├── projekte/                       SENTINEL-Projekte 01 bis 10
-│   └── 01-sentinel-projektstart/
-│       ├── README.md, README.de.md Beschreibung, Pinbelegung, Tests
-│       ├── main.py                 kommentierter Code
-│       └── schaltplan/             Fritzing-Datei (.fzz) und Bilder
+│   ├── 01-sentinel-projektstart/
+│   │   ├── README.md, README.de.md Beschreibung, Pinbelegung, Tests
+│   │   ├── main.py                 kommentierter Code
+│   │   └── schaltplan/             Fritzing-Datei (.fzz) und Bilder
+│   ├── 02- bis 06-.../             Code, Tests, README je Projekt
+│   ├── gemeinsam/                  Pinplan, MQTT-Vertrag, Keypad, Servo-Tür
+│   └── alle_tests.sh               alle automatischen Tests
 ├── uebungen/                       Übungen aus Unterricht und Handbuch
 │   ├── tag03-fussgaengerampel/
 │   ├── tag04-ampel-dimmen/

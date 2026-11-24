@@ -4,3 +4,5 @@ gpiozero>=2.0      # GPIO: LEDs, Taster, Summer, PWM
 flask>=2.0         # Dashboards im Browser (Tag 5)
 paho-mqtt>=1.6     # MQTT-Client (Tag 5)
 qrcode>=7.0        # QR-Code auf dem Live-Board (Tag 5)
+argon2-cffi>=18.3   # PIN-Hash mit Argon2id (Projekt 06)
+mysql-connector-python>=8.0  # MariaDB-Zugriff (Projekt 06)

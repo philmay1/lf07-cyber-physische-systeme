@@ -18,3 +18,8 @@ Thumbs.db
 *.db
 *.db-wal
 *.db-shm
+
+# Lokale Konfiguration mit PIN oder Zugangsdaten (nur *.example.* gehört ins Repo)
+config.ini
+*.key
+access.env
