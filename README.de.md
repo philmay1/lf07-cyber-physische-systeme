@@ -95,7 +95,7 @@ Die zehn SENTINEL-Projekte aus der Agenda des Lernfelds.
 
 <sub>⬜ offen · 🟡 Code fertig und automatisch getestet, Aufbau am Pi offen · ✅ fertig und am Pi getestet</sub>
 
-Ab Projekt 02 teilen sich alle Projekte einen Aufbau und einen [zentralen Pinplan](projekte/README.de.md#zentraler-pinplan) nach dem Anschlussbild des Dozenten. Gemeinsame Bausteine wie der MQTT-Vertrag, das Keypad und die Servo-Tür liegen in [`projekte/gemeinsam/`](projekte/gemeinsam/). Alle automatischen Tests laufen mit `bash projekte/alle_tests.sh`.
+Ab Projekt 02 teilen sich alle Projekte einen Aufbau und einen [zentralen Pinplan](projekte/README.de.md#zentraler-pinplan) für Keypad, Servo und Ampel. Gemeinsame Bausteine wie der MQTT-Vertrag, das Keypad und die Servo-Tür liegen in [`projekte/gemeinsam/`](projekte/gemeinsam/). Alle automatischen Tests laufen mit `bash projekte/alle_tests.sh`.
 
 ## Übungen
 

@@ -17,6 +17,10 @@ Type a PIN on the 4x4 keypad, `#` checks it. Correct: green, two beeps, the SG90
 
 All pins come from the [central pinout](../README.md#central-pinout).
 
+![Breadboard project 05](schaltplan/05-zutritt-servo_steckplatine.png)
+
+Fritzing file: [schaltplan/05-zutritt-servo.fzz](schaltplan/05-zutritt-servo.fzz). It is based on my day 5 exercise sketch: buzzer, button and keypad column C1 are rewired, the servo is new. Fritzing shows a Pi 4B, the Pi 400 has the same header. Servo wire colours follow the SG90: orange signal, red +5 V, brown GND.
+
 ## Run
 
 ```bash
@@ -56,6 +60,7 @@ With real hardware (still open):
 | [`zutritt_lokal.py`](zutritt_lokal.py) | Programm mit lokaler PIN-Prüfung |
 | [`config.example.ini`](config.example.ini) | Vorlage, `config.ini` selbst ist per `.gitignore` ausgeschlossen |
 | [`test_zutritt_lokal.py`](test_zutritt_lokal.py) | automatischer Test |
+| [`schaltplan/`](schaltplan/) | Fritzing sketch and breadboard image |
 
 Every line of code has a German comment explaining what it does and why it is there.
 

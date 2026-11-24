@@ -12,13 +12,13 @@ Die zehn Projekte aus der Agenda von Lernfeld 7. Ab Projekt 02 teilen sich alle 
 | 04 | [Sicherheitsmodul Klimaprüfraum](04-sicherheitsmodul-klimapruefraum/) | 🟡 Code und Tests fertig, Aufbau am Pi offen |
 | 05 | [Lokale Zutrittskontrolle](05-lokale-zutrittskontrolle/) | 🟡 Code und Tests fertig, Aufbau am Pi offen |
 | 06 | [Dynamische Zutrittskontrolle](06-dynamische-zutrittskontrolle/) | 🟡 Code fertig, MariaDB auf dem Pi getestet, Aufbau offen |
-| 07 bis 10 | Umweltüberwachung, Transportbox, Release Readiness, Kundenabnahme | ⬜ Arbeitsblätter vorhanden, Code folgt mit der Hardware |
+| 07 bis 10 | Umweltüberwachung, Transportbox, Release Readiness, Kundenabnahme | ⬜ folgen in den nächsten Unterrichtstagen |
 
 "Code und Tests fertig" heißt: Die automatischen Tests laufen auf dem Pi mit simulierten Pins grün. Mit echten Bauteilen ist das Projekt erst getestet, wenn die Testtabelle in seiner README abgehakt ist.
 
 ## Zentraler Pinplan
 
-Grundlage ist das Anschlussbild des Dozenten für Pi 400, Keypad und Servo SG90. Die Ampel-LEDs aus Tag 3 bleiben gesteckt. Alle Programme lesen die Pins aus [`gemeinsam/pinplan.py`](gemeinsam/pinplan.py).
+Grundlage ist ein Anschlussbild aus dem Kurs für Pi 400, Keypad und Servo SG90. Meine eigene Fritzing-Skizze dazu liegt in [Projekt 05](05-lokale-zutrittskontrolle/schaltplan/). Die Ampel-LEDs aus Tag 3 bleiben gesteckt. Alle Programme lesen die Pins aus [`gemeinsam/pinplan.py`](gemeinsam/pinplan.py).
 
 | Bauteil | GPIO (BCM) | Physischer Pin | Hinweis |
 |---|:-:|:-:|---|
@@ -36,7 +36,7 @@ Grundlage ist das Anschlussbild des Dozenten für Pi 400, Keypad und Servo SG90.
 | GND-Schiene | GND | 20 | für LEDs, Taster, Summer |
 
 > [!WARNING]
-> Nur stromlos umstecken. Der Servo bekommt 5 V, sein Signal kommt aber vom 3,3-V-GPIO. Laut Bild des Dozenten reicht die Versorgung aus dem Pi nur für kurze Tests ohne Last. Ruckelt der Servo oder startet der Pi neu, braucht er ein eigenes 5-V-Netzteil mit gemeinsamer Masse.
+> Nur stromlos umstecken. Der Servo bekommt 5 V, sein Signal kommt aber vom 3,3-V-GPIO. Aus dem Pi reicht die Versorgung aus dem Pi nur für kurze Tests ohne Last. Ruckelt der Servo oder startet der Pi neu, braucht er ein eigenes 5-V-Netzteil mit gemeinsamer Masse.
 
 ### Umbau gegenüber den Übungen von Tag 3 und Tag 5
 
@@ -44,7 +44,7 @@ Grundlage ist das Anschlussbild des Dozenten für Pi 400, Keypad und Servo SG90.
 |---|---|---|---|
 | Summer | GPIO18 (Pin 12) | GPIO22 (Pin 15) | GPIO18 ist jetzt das Servo-Signal |
 | Taster | GPIO12 (Pin 32) | GPIO27 (Pin 13) | GPIO12 ist jetzt Keypad C1 |
-| Keypad C1 | GPIO26 (Pin 37) | GPIO12 (Pin 32) | so steht es im Bild des Dozenten |
+| Keypad C1 | GPIO26 (Pin 37) | GPIO12 (Pin 32) | so ist es im Anschlussbild aus dem Kurs geplant |
 
 Die Übungen in [`../uebungen/`](../uebungen/) behalten ihre alten Pins und laufen nur mit ihrem damaligen Aufbau.
 

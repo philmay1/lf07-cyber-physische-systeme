@@ -12,13 +12,13 @@ The ten projects from the learning field 7 agenda. From project 02 on, all proje
 | 04 | [Climate test room safety module](04-sicherheitsmodul-klimapruefraum/) | 🟡 code and tests done, hardware test pending |
 | 05 | [Local access control](05-lokale-zutrittskontrolle/) | 🟡 code and tests done, hardware test pending |
 | 06 | [Dynamic access control](06-dynamische-zutrittskontrolle/) | 🟡 code done, MariaDB tested on the Pi, hardware test pending |
-| 07 to 10 | Environment, transport box, release readiness, acceptance | ⬜ worksheets done, code follows with the hardware |
+| 07 to 10 | Environment, transport box, release readiness, acceptance | ⬜ follow in the next course days |
 
 "Code and tests done" means the automatic tests pass on the Pi with simulated pins. A project counts as tested on hardware once the test table in its README is ticked.
 
 ## Central pinout
 
-Based on the instructor's wiring picture for Pi 400, keypad and SG90 servo. The traffic light LEDs from day 3 stay in place. All programs read their pins from [`gemeinsam/pinplan.py`](gemeinsam/pinplan.py).
+Based on a wiring picture from class for Pi 400, keypad and SG90 servo. My own Fritzing sketch is in [project 05](05-lokale-zutrittskontrolle/schaltplan/). The traffic light LEDs from day 3 stay in place. All programs read their pins from [`gemeinsam/pinplan.py`](gemeinsam/pinplan.py).
 
 | Part | GPIO (BCM) | Physical pin | Note |
 |---|:-:|:-:|---|
@@ -44,7 +44,7 @@ Based on the instructor's wiring picture for Pi 400, keypad and SG90 servo. The 
 |---|---|---|---|
 | Buzzer | GPIO18 (pin 12) | GPIO22 (pin 15) | GPIO18 is now the servo signal |
 | Push button | GPIO12 (pin 32) | GPIO27 (pin 13) | GPIO12 is now keypad C1 |
-| Keypad C1 | GPIO26 (pin 37) | GPIO12 (pin 32) | as in the instructor's picture |
+| Keypad C1 | GPIO26 (pin 37) | GPIO12 (pin 32) | as planned in the wiring picture from class |
 
 The exercises in [`../uebungen/`](../uebungen/) keep their old pins and only run with their original wiring.
 

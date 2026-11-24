@@ -4,7 +4,7 @@ Sichere Sequenz laut Arbeitsblatt: Start verriegelt (0°), bei richtiger PIN kon
 auf 90°, 3 s offen halten, zurück auf 0°, danach PWM aus. Bei falscher PIN bewegt sich nichts.
 Im Cleanup wird zuerst verriegelt, dann alles abgeschaltet.
 
-Servo: Signal GPIO18 (Pin 12), +5 V Pin 2, GND Pin 6. Laut Bild des Dozenten nur für kurze
+Servo: Signal GPIO18 (Pin 12), +5 V Pin 2, GND Pin 6. Aus dem Pi versorgt nur für kurze
 Tests ohne Last aus dem Pi versorgen. Bei Ruckeln oder Neustart des Pi: externes 5-V-Netzteil
 mit gemeinsamer Masse nehmen.
 """

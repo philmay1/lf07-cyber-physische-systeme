@@ -1,6 +1,7 @@
 """Zentraler Pinplan für alle SENTINEL-Projekte ab Projekt 02.
 
-Grundlage ist das Anschlussbild des Dozenten (Pi 400 + Keypad + SG90).
+Grundlage ist ein Anschlussbild aus dem Kurs (Pi 400 + Keypad + SG90). Meine eigene
+Fritzing-Skizze dazu liegt in projekte/05-lokale-zutrittskontrolle/schaltplan/.
 Alle Zahlen sind BCM-Nummern (GPIO-Namen), in den Kommentaren steht der physische Pin.
 Ein Pin wird nur hier geändert, alle Projekte lesen ihn von hier.
 """
@@ -17,7 +18,7 @@ BEWEGUNGSMELDER = 17  # Pin 11: optionaler PIR-Ausgang für Projekt 04 (nur 3,3 
 # ---------- Summer über PNP-Transistor ----------
 SUMMER = 22         # Pin 15: vorher GPIO18, der ist jetzt das Servo-Signal
 
-# ---------- 4x4-Keypad laut Bild des Dozenten ----------
+# ---------- 4x4-Keypad: R = Zeilen, C = Spalten ----------
 KEYPAD_ZEILEN = (5, 6, 13, 19)     # Pin 29, 31, 33, 35: R1 bis R4
 KEYPAD_SPALTEN = (12, 16, 20, 21)  # Pin 32, 36, 38, 40: C1 bis C4
 KEYPAD_TASTEN = (                  # Tastenbelegung Zeile für Zeile, wie auf dem Keypad aufgedruckt

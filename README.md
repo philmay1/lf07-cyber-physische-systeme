@@ -95,7 +95,7 @@ The ten SENTINEL projects from the course agenda.
 
 <sub>⬜ open · 🟡 code done and tested automatically, hardware test pending · ✅ done and tested on the Pi</sub>
 
-From project 02 on, all projects share one setup and a [central pinout](projekte/README.md#central-pinout) based on the instructor's wiring picture. Shared building blocks such as the MQTT contract, the keypad and the servo door live in [`projekte/gemeinsam/`](projekte/gemeinsam/). Run all automatic tests with `bash projekte/alle_tests.sh`.
+From project 02 on, all projects share one setup and a [central pinout](projekte/README.md#central-pinout) for keypad, servo and traffic light. Shared building blocks such as the MQTT contract, the keypad and the servo door live in [`projekte/gemeinsam/`](projekte/gemeinsam/). Run all automatic tests with `bash projekte/alle_tests.sh`.
 
 ## Exercises
 

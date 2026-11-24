@@ -17,6 +17,10 @@ PIN am 4x4-Keypad tippen, `#` prüft. Richtig: grün, zwei Pieptöne, der Servo 
 
 Alle Pins kommen aus dem [zentralen Pinplan](../README.de.md#zentraler-pinplan).
 
+![Steckplatine Projekt 05](schaltplan/05-zutritt-servo_steckplatine.png)
+
+Fritzing-Datei: [schaltplan/05-zutritt-servo.fzz](schaltplan/05-zutritt-servo.fzz). Ich habe sie aus meiner Skizze der Übung von Tag 5 weiterentwickelt: Summer, Taster und Keypad-Spalte C1 sind umgesteckt, der Servo ist neu. Fritzing zeigt einen Pi 4B, der Pi 400 hat dieselbe Stiftleiste. Die Servo-Kabel haben die Farben des SG90: orange Signal, rot +5 V, braun GND.
+
 ## Starten
 
 ```bash
@@ -56,6 +60,7 @@ Mit echten Bauteilen (noch offen):
 | [`zutritt_lokal.py`](zutritt_lokal.py) | Programm mit lokaler PIN-Prüfung |
 | [`config.example.ini`](config.example.ini) | Vorlage, `config.ini` selbst ist per `.gitignore` ausgeschlossen |
 | [`test_zutritt_lokal.py`](test_zutritt_lokal.py) | automatischer Test |
+| [`schaltplan/`](schaltplan/) | Fritzing-Skizze und Steckplatinen-Bild |
 
 Jede Code-Zeile hat einen deutschen Kommentar, der erklärt, was sie tut und warum sie da ist.
 
