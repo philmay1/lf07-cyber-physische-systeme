@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="94" height="22" role="img" aria-label="MariaDB: SQL">
-<linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-opacity=".12"/></linearGradient>
-<clipPath id="r"><rect width="94" height="22" rx="4" fill="#fff"/></clipPath>
-<g clip-path="url(#r)"><rect width="59" height="22" fill="#3a3f45"/><rect x="59" width="35" height="22" fill="#003545"/><rect width="94" height="22" fill="url(#s)"/></g>
-<g fill="#fff" text-anchor="middle" font-family="Verdana,Segoe UI,DejaVu Sans,sans-serif" font-size="11">
-<text x="29.5" y="15" fill="#010101" fill-opacity=".3">MariaDB</text><text x="29.5" y="14.5">MariaDB</text>
-<text x="76.5" y="15" fill="#010101" fill-opacity=".3">SQL</text><text x="76.5" y="14.5">SQL</text></g></svg>

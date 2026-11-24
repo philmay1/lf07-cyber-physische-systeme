@@ -88,7 +88,7 @@ Vor der Vorführung:
 
 ```powershell
 pip install paho-mqtt
-python sender.py --host 192.168.2.117 --anzahl 20
+python sender.py --host <IP-des-Pi> --anzahl 20
 ```
 
 Die IP des Pi steht auf dem Board unter dem QR-Code. Im Heimnetz klappt oft auch `--host raspberrypi.local`.

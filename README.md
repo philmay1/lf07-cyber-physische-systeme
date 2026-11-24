@@ -13,7 +13,8 @@
   <img src="docs/badges/raspberry-pi.svg" alt="Raspberry Pi 400">
   <img src="docs/badges/python.svg" alt="Python 3">
   <img src="docs/badges/mqtt.svg" alt="MQTT Mosquitto">
-  <img src="docs/badges/mariadb.svg" alt="MariaDB">
+  <img src="docs/badges/sqlite.svg" alt="SQLite">
+  <img src="docs/badges/flask.svg" alt="Flask">
   <img src="docs/badges/status-en.svg" alt="Status: in progress">
 </p>
 
@@ -27,135 +28,61 @@
 </p>
 
 <p align="center">
-  <a href="#current-status">Current status</a> ·
-  <a href="#architecture">Architecture</a> ·
+  <a href="#highlights">Highlights</a> ·
   <a href="#projects">Projects</a> ·
   <a href="#exercises">Exercises</a> ·
-  <a href="#roadmap">Roadmap</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#learning-log">Learning log</a> ·
   <a href="#quick-start">Quick start</a> ·
+  <a href="#how-i-work">How I work</a> ·
   <a href="#safety-and-security">Safety</a>
 </p>
 
 ---
 
 > [!NOTE]
-> This repo grows with the course. The ten SENTINEL projects live in `projekte/`, extra exercises in `uebungen/`. Every folder brings its own README, code and schematic. The progress bar counts both.
+> This is a learning repo. I am retraining for IT and not a professional developer. Every line of code has a German comment so I can explain it myself and others can follow it. The repo grows with every course day.
 
 ## At a glance
 
 <table>
 <tr>
-<td width="55%" valign="top">
+<td width="50%" valign="top">
 
 **What is a cyber-physical system?**
 
-A cyber-physical system (CPS) connects software to the physical world. A temperature sensor reports 31 °C, the program compares that with a limit, and a fan switches on. The Raspberry Pi is the brain, the GPIO pins are its hands.
+A cyber-physical system (CPS) connects software to the physical world. A sensor measures something, a program decides, and an actuator acts. Example: someone types a wrong PIN on the keypad, the program counts it, and after the third mistake a red light turns on. The Raspberry Pi is the brain, the GPIO pins are its hands.
 
 **What happens here?**
 
-Ten projects in two weeks, from a single LED to SENTINEL: a networked system with PIN access control, environmental monitoring, a database and a customer acceptance test.
+Learning field 7 builds SENTINEL step by step, a small security system with PIN access control, environmental monitoring, a database and a customer acceptance test. Exercises from class come on top. Everything runs and is tested on my own Raspberry Pi 400.
 
 </td>
-<td width="45%" valign="top">
+<td width="50%" valign="top">
 
-<img src="docs/img/raspberry-pi-400-kit.jpg" alt="Raspberry Pi 400 Personal Computer Kit">
-<!-- Add the image source or replace it with your own photo before making the repo public -->
+<img src="uebungen/tag05-mqtt/bilder/board_live.jpg" alt="Live board of the MQTT exercise: senders, Mosquitto broker and database">
 
-</td>
-</tr>
-</table>
-
-## Current status
-
-<table>
-<tr>
-<td width="45%" valign="top">
-
-<img src="uebungen/tag04-ampel-dimmen/schaltplan/ampel-dimmen_steckplatine.png" alt="Breadboard view of the dimmed traffic light with three LEDs on GPIO25, GPIO8 and GPIO7">
-
-</td>
-<td width="55%" valign="top">
-
-**Recently finished, all built and tested on the Raspberry Pi 400**
-
-- ✅ Exercise day 4: [Dimming the traffic light](uebungen/tag04-ampel-dimmen/). Red at 100 %, yellow at 60 %, green at 20 %, dimmed with PWM.
-- ✅ Exercise day 3: [Pedestrian crossing](uebungen/tag03-fussgaengerampel/). Traffic light for cars and pedestrians with a request button. A buzzer ticks during pedestrian green as a signal for blind people.
-- ✅ Project 01: [SENTINEL kickoff](projekte/01-sentinel-projektstart/). A status LED on GPIO25 blinks 1 s on, 2 s off.
-
-**What I learned:** the GPIO number and the pin number are two different things. Every LED needs a series resistor. A button needs a pull-up and debouncing, and a transistor switches the buzzer because the pin should not drive it alone. PWM can dim an LED even though the pin only knows on and off.
-
-**Next up:** Project 02 Local material station. A push button becomes an input, with pull-up and debouncing.
+<sub>Live board from the MQTT exercise on day 5: phones and the Pi send events to Mosquitto, a logger writes them to SQLite.</sub>
 
 </td>
 </tr>
 </table>
 
-## Architecture
+## Highlights
 
-The target picture for SENTINEL. Every project adds one building block. Green is already built.
-
-```mermaid
-flowchart LR
-    subgraph sensors["Sensors"]
-        direction TB
-        S1["DHT11<br>temperature, humidity"]
-        S2["Matrix keypad<br>PIN entry"]
-        S3["Push button<br>material withdrawal"]
-    end
-
-    subgraph pi["Raspberry Pi 400"]
-        P["Python app<br>gpiozero, state machine"]
-    end
-
-    subgraph actuators["Actuators"]
-        direction TB
-        A1["LED"]
-        A2["Servo<br>door lock"]
-        A3["LCD"]
-    end
-
-    subgraph net["Network"]
-        direction TB
-        B(("MQTT broker<br>Mosquitto"))
-        C["Dashboard or<br>second device"]
-        D[("MariaDB")]
-    end
-
-    sensors --> P
-    P --> actuators
-    P <-->|"JSON over MQTT"| B
-    B <--> C
-    P -->|"readings, access log"| D
-
-    classDef done fill:#2ea043,stroke:#2ea043,color:#fff
-    class A1,P done
-```
-
-### Example: access control as a state machine
-
-This is how a PIN lock (project 05 and 06) behaves. Drawing the states first makes the code much easier to write and to test.
-
-```mermaid
-stateDiagram-v2
-    state "Entering PIN" as EnteringPIN
-    [*] --> Locked
-    Locked --> EnteringPIN: key pressed
-    EnteringPIN --> Checking: hash key pressed
-    EnteringPIN --> Locked: timeout 10 s
-    Checking --> Open: PIN correct
-    Checking --> Locked: PIN wrong
-    Checking --> Alarm: 3rd wrong attempt
-    Open --> Locked: after 5 s
-    Alarm --> Locked: reset by admin
-```
-
-<p align="right"><a href="#top">back to top ↑</a></p>
+| | What | Why it is interesting |
+|---|---|---|
+| <img src="uebungen/tag05-mqtt/bilder/handy.jpg" width="90" alt="Phone page"> | [MQTT radio](uebungen/tag05-mqtt/) | The whole class becomes an MQTT client via QR code. Every event is stored with a timestamp in SQLite and flies across a live board on the projector. |
+| <img src="uebungen/tag05-zutrittskontrolle/bilder/zutritt_gewaehrt.jpg" width="90" alt="Access granted"> | [Access control](uebungen/tag05-zutrittskontrolle/) | PIN on a 4x4 keypad, lockout after three failed attempts that survives a reboot. PINs are stored only as salted hashes. |
+| <img src="uebungen/tag04-ampel-dimmen/schaltplan/ampel-dimmen_steckplatine.png" width="90" alt="Breadboard dimmed traffic light"> | [Dimming the traffic light](uebungen/tag04-ampel-dimmen/) | An LED can only be on or off. With PWM it still glows at 60 % or 20 %. |
 
 ## Projects
 
+The ten SENTINEL projects from the course agenda.
+
 | No. | Project | What it does | Key skills | Status |
 |:-:|---|---|---|:-:|
-| 01 | [SENTINEL kickoff](projekte/01-sentinel-projektstart/) | Lights an LED safely through a GPIO pin | Series resistor, GPIO output | ✅ |
+| 01 | [SENTINEL kickoff](projekte/01-sentinel-projektstart/) | Lights a status LED safely through a GPIO pin | Series resistor, GPIO output | ✅ |
 | 02 | Local material station | Registers withdrawals with a button | Pull-up, debouncing, events | ⬜ |
 | 03 | Networked material station | Sends every withdrawal as an MQTT message | MQTT, JSON, topics | ⬜ |
 | 04 | Safety module for a climate test room | Warns before anyone enters an unsafe room | Sensor choice, countdown | ⬜ |
@@ -170,40 +97,96 @@ stateDiagram-v2
 
 ## Exercises
 
-Extra tasks from class and the Raspberry Pi Beginner's Guide. They are not part of SENTINEL but count towards the progress bar.
+Tasks from class and the Raspberry Pi Beginner's Guide. They build the technology SENTINEL needs later and count towards the progress bar.
 
 | Day | Exercise | What it does | Key skills | Status |
 |:-:|---|---|---|:-:|
-| 03 | [Pedestrian crossing](uebungen/tag03-fussgaengerampel/) | Car and pedestrian lights with a request button and a ticking signal | Pull-up, debouncing, events, PNP transistor | ✅ |
+| 03 | [Pedestrian crossing](uebungen/tag03-fussgaengerampel/) | Car and pedestrian lights with a request button and a ticking signal for blind people | Pull-up, debouncing, events, PNP transistor | ✅ |
 | 04 | [Dimming the traffic light](uebungen/tag04-ampel-dimmen/) | Lights the traffic light at three levels: red 100 %, yellow 60 %, green 20 % | PWM, duty cycle, PWMLED | ✅ |
 | 05 | [Access control](uebungen/tag05-zutrittskontrolle/) | PIN on a 4x4 keypad, lockout after 3 failures, log in SQLite, live dashboard | Matrix keypad, SQLite, salted hash, Flask | 🟡 |
-| 05 | [MQTT radio](uebungen/tag05-mqtt/) | Keypad, phones and notebook publish events to Mosquitto, a subscriber stores value and time in SQLite, live board for the projector | MQTT, Mosquitto, publish/subscribe, WebSocket, SQLite | ✅ |
+| 05 | [MQTT radio](uebungen/tag05-mqtt/) | Keypad, phones and notebook send events to Mosquitto, a subscriber stores value and time in SQLite | MQTT, publish/subscribe, WebSocket, SQLite | ✅ |
+
+Access control is 🟡 because its test table on the Pi is not fully ticked yet. It is the basis for projects 05 and 06.
+
+## Architecture
+
+The target picture for SENTINEL. Green parts are already built in projects or exercises.
+
+```mermaid
+flowchart LR
+    subgraph sensors["Inputs and sensors"]
+        direction TB
+        S1["DHT11<br>temperature, humidity"]
+        S2["4x4 keypad<br>PIN entry"]
+        S3["Push button"]
+    end
+
+    subgraph pi["Raspberry Pi 400"]
+        P["Python programs<br>gpiozero"]
+    end
+
+    subgraph actuators["Actuators"]
+        direction TB
+        A1["LEDs, also dimmed"]
+        A4["Buzzer"]
+        A2["Servo<br>door lock"]
+        A3["LCD"]
+    end
+
+    subgraph net["Network and data"]
+        direction TB
+        B(("MQTT broker<br>Mosquitto"))
+        C["Browser dashboard<br>Flask"]
+        D[("SQLite<br>MariaDB later")]
+    end
+
+    sensors --> P
+    P --> actuators
+    P <-->|"events over MQTT"| B
+    B <--> C
+    P -->|"attempts, readings"| D
+
+    classDef done fill:#2ea043,stroke:#2ea043,color:#fff
+    class S2,S3,P,A1,A4,B,C,D done
+```
 
 <details>
-<summary><b>Planned MQTT topics</b> (draft, will change with project 03)</summary>
+<summary><b>Example: access control as a state machine</b></summary>
 
-| Topic | Direction | Example payload |
-|---|---|---|
-| `sentinel/station1/material` | Pi → broker | `{"item": "M3 screws", "action": "taken", "ts": "2026-11-18T09:15:00Z"}` |
-| `sentinel/room1/climate` | Pi → broker | `{"temp_c": 22.4, "humidity": 48}` |
-| `sentinel/door1/state` | Pi → broker | `{"state": "locked"}` |
-| `sentinel/door1/command` | broker → Pi | `{"cmd": "unlock", "by": "admin"}` |
+This is how the PIN lock from the day 5 exercise behaves. Drawing the states first makes the code much easier to write and test.
+
+```mermaid
+stateDiagram-v2
+    state "PIN entry" as PINEntry
+    state "Check" as Check
+    [*] --> Ready
+    Ready --> PINEntry: key pressed
+    PINEntry --> Check: hash key
+    PINEntry --> Ready: 10 s without a key
+    Check --> Open: PIN correct
+    Check --> Ready: PIN wrong, 1st or 2nd try
+    Check --> Locked: 3rd failure
+    Open --> Ready: after 3 s
+    Locked --> Ready: time over or admin unlocks
+```
 
 </details>
 
-## Roadmap
+<p align="right"><a href="#top">back to top ↑</a></p>
 
-Planned schedule for the two course weeks.[^1]
+## Learning log
+
+What was built on which day. Week 2 is the plan from the agenda.
 
 ```mermaid
 timeline
     title LF07 in ten course days
     section Week 1
-        Day 1 : Basics, LED, GPIO ✅
-        Day 2 : Inputs and debouncing
-        Day 3 : MQTT and IoT protocols
-        Day 4 : Sensors and timing logic
-        Day 5 : Keypad, PWM, servo
+        Day 1 : Basics, electrical safety, first LED in Fritzing ✅
+        Day 2 : Project 01 status LED on GPIO25 ✅
+        Day 3 : Pedestrian crossing with button and buzzer ✅
+        Day 4 : Dimming the traffic light with PWM ✅
+        Day 5 : Keypad access control, MQTT radio ✅
     section Week 2
         Day 6 : MariaDB and Argon2
         Day 7 : DHT11 and telemetry
@@ -212,13 +195,15 @@ timeline
         Day 10 : Acceptance and assessment
 ```
 
-### What I will be able to do after LF07
+### What I can do so far
 
-- [ ] Wire LEDs, buttons and sensors safely to the GPIO header
-- [ ] Read inputs reliably with pull-up resistors and debouncing
-- [ ] Connect devices over MQTT with a clear JSON interface
-- [ ] Store sensor data and hashed PINs in MariaDB
-- [ ] Model behaviour as a state machine
+- [x] Wire LEDs, buttons, a buzzer and a 4x4 keypad safely to the GPIO header
+- [x] Read inputs reliably with pull-up or pull-down and debouncing
+- [x] Dim an LED with PWM
+- [x] Connect devices over MQTT (publisher, broker, subscriber)
+- [x] Store data and hashed PINs in an SQLite database
+- [ ] Store PINs with Argon2 in MariaDB
+- [ ] Read sensors such as the DHT11 and react to limits
 - [ ] Assess risks with a threat analysis and an FMEA
 - [ ] Present and hand over a system to a customer
 
@@ -228,28 +213,33 @@ timeline
 
 | Part | Details |
 |---|---|
-| Raspberry Pi 400 | Computer built into a keyboard, Broadcom BCM2711 quad core (1.8 GHz), 4 GB RAM, Wi-Fi, Bluetooth 5.0, Gigabit Ethernet |
-| Ports | 40-pin GPIO header on the back, 2 × micro HDMI, USB 3.0 and 2.0, USB-C power |
-| Starter kit | Mouse, USB-C power supply, micro HDMI cable, microSD card with Raspberry Pi OS, Beginner's Guide |
-| Components | LEDs with series resistors, push buttons, DHT11, matrix keypad, servo, LCD, breadboard and jumper wires |
+| Raspberry Pi 400 | Computer inside a keyboard, Broadcom BCM2711 with 4 cores (1.8 GHz), 4 GB RAM, Wi-Fi, Gigabit Ethernet, 40-pin GPIO header at the back |
+| Kit | Miuzei Ultimate Starter Kit: breadboard, jumper wires, LEDs, resistors (220 Ω, 1 kΩ, 10 kΩ), push button, active buzzer, PNP transistor S8550, 4x4 keypad |
+| Tools | VS Code with Remote-SSH, Fritzing for breadboard sketches, Git and GitHub |
 
 > [!TIP]
-> Run `pinout` in the Pi's terminal. It prints a map of all 40 GPIO pins, which saves a lot of counting.
+> Type `pinout` in the Pi's terminal. It prints a map of all 40 GPIO pins and saves a lot of counting.
 
 ## Repository layout
 
+Every project and every exercise uses the same layout, so everything is found in the same place.
+
 ```text
 .
-├── projekte/                     SENTINEL projects 01 to 10
+├── projekte/                       SENTINEL projects 01 to 10
 │   └── 01-sentinel-projektstart/
-│       ├── README.md, README.de.md
-│       ├── main.py
-│       └── schaltplan/           Fritzing file (.fzz) and images
-├── uebungen/                     exercises from class and the guide
-│   └── tag03-fussgaengerampel/   same layout as a project
-├── docs/                         banner, images and badges for the README
-├── .github/vorlagen/             README templates for new projects
-└── requirements.txt
+│       ├── README.md, README.de.md description, pinout, tests
+│       ├── main.py                 commented code
+│       └── schaltplan/             Fritzing file (.fzz) and images
+├── uebungen/                       exercises from class and the guide
+│   ├── tag03-fussgaengerampel/
+│   ├── tag04-ampel-dimmen/
+│   ├── tag05-zutrittskontrolle/    with dashboard and tests
+│   └── tag05-mqtt/                 with live board and tests
+├── docs/                           banner, badges
+├── .github/vorlagen/               README templates for new projects
+├── requirements.txt                Python packages
+└── LICENSE                         MIT license
 ```
 
 ## Quick start
@@ -259,50 +249,50 @@ timeline
 git clone https://github.com/philmay1/lf07-cyber-physische-systeme.git
 cd lf07-cyber-physische-systeme
 
-# Create a virtual environment and install packages
+# Install packages (gpiozero comes with Raspberry Pi OS)
 python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-# Run a project, for example the first one
-python3 projekte/01-sentinel-projektstart/main.py
-
-# Or the pedestrian crossing
+# Run an example, for instance the pedestrian crossing
 python3 uebungen/tag03-fussgaengerampel/ampel.py
 ```
 
-<details>
-<summary><b>My workflow: PC, GitHub and Pi</b></summary>
+How to start and test each exercise is described in its own README.
+
+## How I work
 
 ```mermaid
 sequenceDiagram
-    participant PC as VS Code on my PC
-    participant GH as GitHub
+    participant PC as VS Code on the PC
     participant Pi as Raspberry Pi 400
+    participant GH as GitHub
     PC->>Pi: edit and run code over Remote-SSH
-    Pi-->>PC: output, errors
+    Pi-->>PC: output, error messages
+    PC->>PC: sketch the wiring in Fritzing
     PC->>GH: commit and push
-    GH->>Pi: git pull on a second Pi or after a reset
+    GH->>Pi: git pull so the Pi has the latest version
 ```
 
-Useful shortcuts in VS Code: <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> opens the command palette, <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd> opens source control.
-
-</details>
+- **Plan first, then build:** every circuit gets a Fritzing sketch and a pinout before anything is wired.
+- **Comments:** every line of code has a German comment.
+- **Tests:** every README has a test table. The larger exercises also have automatic tests with simulated pins (`test_zutritt.py`, `test_funk.py`) that run without hardware.
+- **Commits:** short messages like `feat(uebungen): ...` for new features and `docs(...)` for text.
 
 ## Safety and security
 
 > [!WARNING]
-> GPIO pins work with 3.3 V. Connecting 5 V to an input pin can destroy the Pi. Every LED needs a series resistor, and the Pi stays unplugged while I change the wiring.
+> GPIO pins work with 3.3 V. Putting 5 V on an input can destroy the Pi. Every LED needs a series resistor, and the Pi is unplugged while rewiring.
 
 > [!IMPORTANT]
-> Passwords, PINs, Wi-Fi credentials and tokens never go into the code. They live in a `.env` file that `.gitignore` keeps out of the repo, and PINs are stored only as Argon2 hashes.
+> Passwords and PINs never go into the code. The databases (`*.db`) are excluded by `.gitignore`. PINs are stored only as salted hashes (PBKDF2-SHA256), project 06 adds Argon2. Broker and dashboards run without login, so they belong on the home or school network only, never on the internet.
 
 ## About me
 
-I am retraining as an IT specialist for system integration at GFN in Germany. This repo documents what I built hands-on in learning field 7.
+I am retraining as an IT specialist for system integration at GFN. This repo documents what I built hands-on in learning field 7, from the first LED to a networked access control.
 
-<!-- Optional: add a link to your GitHub profile or LinkedIn -->
+## License
+
+The code is released under the [MIT license](LICENSE). You may use and change it as long as the license notice stays.
 
 <p align="right"><a href="#top">back to top ↑</a></p>
-
-[^1]: The order follows the official course agenda. The split across days is my own estimate.

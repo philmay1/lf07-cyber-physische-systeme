@@ -7,7 +7,7 @@ Braucht nur paho-mqtt (Notebook: pip install paho-mqtt).
     python sender.py --cpu --anzahl 20           20 echte Messwerte: CPU-Temperatur des Pi
     python sender.py --text "Hallo Klasse"       eine Nachricht senden
     python sender.py                             tippen, jede Zeile ist ein Event
-    python sender.py --host 192.168.2.117 ...    anderer Broker (Standard: raspberrypi.local)
+    python sender.py --host <IP-des-Pi> ...    anderer Broker (Standard: raspberrypi.local)
 """
 # Die erste Zeile (#!) sagt Linux, dass Python 3 diese Datei ausführen soll.
 # Der Docstring darunter wird nicht ausgeführt. Er dient als Hilfetext (python sender.py -h).
@@ -101,7 +101,7 @@ def main():
         client.connect(a.host, 1883, keepalive=30)
     except OSError as fehler:
         raise SystemExit(f"Kein Broker unter {a.host} erreichbar ({fehler}).\n"
-                         "Tipp: IP des Pi angeben, z. B.  --host 192.168.2.117")
+                         "Tipp: IP des Pi angeben, z. B.  --host <IP-des-Pi>")
     # Netzwerk-Schleife im Hintergrund starten. Sie erledigt Senden und Bestätigungen.
     client.loop_start()
     print(f"Verbunden mit {a.host} als {a.name}")

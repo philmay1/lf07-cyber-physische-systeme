@@ -1,3 +1,6 @@
 # Auf Raspberry Pi OS ist gpiozero schon installiert.
 # In einer venv: python3 -m venv --system-site-packages .venv
-gpiozero>=2.0
+gpiozero>=2.0      # GPIO: LEDs, Taster, Summer, PWM
+flask>=2.0         # Dashboards im Browser (Tag 5)
+paho-mqtt>=1.6     # MQTT-Client (Tag 5)
+qrcode>=7.0        # QR-Code auf dem Live-Board (Tag 5)
