@@ -186,7 +186,7 @@
     <div class="spalte"><h3>Sender (Publisher)</h3><div id="sender"><div class="leer">Noch kein Sender.<br>QR-Code scannen!</div></div></div>
     <div class="spalte"><h3>Broker</h3>
       <div class="broker" id="broker"><div><b>Mosquitto</b><br><small>:1883 MQTT · :9001 WebSocket</small></div></div>
-      <div id="topic">Topic lf07/#</div>
+      <div id="topic">Login + Rechte (ACL)</div>
     </div>
     <div class="spalte"><h3>Subscriber → Datenbank</h3>
       <div class="tonne" id="tonne"><div class="deckel"></div><div class="koerper"><span id="dbZahl">0</span></div></div>
@@ -323,9 +323,15 @@ function chip(name) {
 
 // ---------- Das Board als MQTT-Client ----------
 // Mit Mosquitto über WebSocket verbinden (gleicher Rechner wie die Seite).
-const client = mqtt.connect('ws://' + location.hostname + ':9001', { clientId: 'board-' + Math.random().toString(36).slice(2, 8) });
-// Verbunden: alles unter lf07/ abonnieren und Status grün.
-client.on('connect', () => { client.subscribe('lf07/#'); $('status').textContent = 'Broker: verbunden'; $('status').classList.add('an'); });
+// Zugangsdaten setzt der Pi beim Ausliefern ein (Rolle board: darf nur lesen, sieht keine PINs).
+const ZUGANG = __ZUGANG__;
+// Mit Mosquitto über WebSocket verbinden. Benutzer und Passwort kommen aus ZUGANG (falls vorhanden).
+const client = mqtt.connect('ws://' + location.hostname + ':' + ZUGANG.port,
+  { clientId: 'board-' + Math.random().toString(36).slice(2, 8), username: ZUGANG.username, password: ZUGANG.password });
+// Genau die Topics, die die Rolle board lesen darf. lf07/zutritt/pin gehört absichtlich nicht dazu.
+const THEMEN = ['lf07/handy/#', 'lf07/sender/#', 'lf07/keypad/#', 'lf07/zutritt/antwort/#'];
+// Verbunden: erlaubte Topics abonnieren und Status grün.
+client.on('connect', () => { client.subscribe(THEMEN); $('status').textContent = 'Broker: verbunden'; $('status').classList.add('an'); });
 // Getrennt: Status zurück auf grau.
 client.on('close', () => { $('status').textContent = 'Broker: getrennt'; $('status').classList.remove('an'); });
 // Jede Nachricht: Paket vom Sender zum Broker fliegen lassen.
@@ -338,7 +344,7 @@ client.on('message', (topic, daten) => {
   try { j = JSON.parse(text); } catch (e) {}
   if (j && typeof j === 'object' && 'wert' in j) { wert = String(j.wert); name = j.sender || name; }
   // Antworten der Zutrittskontrolle kommen von SENTINEL selbst.
-  if (topic.startsWith('lf07/zutritt/antwort/')) { name = 'SENTINEL'; wert = j ? j.ergebnis : text; }
+  if (topic.startsWith('lf07/zutritt/antwort/')) { name = 'SENTINEL'; wert = j ? j.ergebnis : text; if (j && j.von) letzterPinSender = j.von; }
   // PINs nie zeigen.
   if (topic.endsWith('/pin')) { letzterPinSender = name; wert = 'PIN ' + '*'.repeat(Math.min(wert.length, 8)); }
   // Chip holen, Zähler hoch, kurz aufleuchten.

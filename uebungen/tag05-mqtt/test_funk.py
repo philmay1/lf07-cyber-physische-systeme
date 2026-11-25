@@ -22,6 +22,9 @@ TMP = Path(tempfile.mkdtemp())
 # Beide Datenbanken in den Wegwerf-Ordner umlenken. Die echten bleiben unberührt.
 os.environ["FUNK_DB"] = str(TMP / "mqtt_test.db")
 os.environ["ZUTRITT_DB"] = str(TMP / "zutritt_test.db")
+# Test-Passwörter für alle Rollen. Gesetzte Variablen gewinnen gegen eine echte .env.password.
+for _r in ("logger", "board", "bruecke", "keypad", "sender", "handy"):
+    os.environ[f"MQTT_PASS_{_r.upper()}"] = f"testpasswort-{_r}-123"
 
 # Erst jetzt unsere Module laden, damit sie die Test-Pfade übernehmen.
 import funk_db as fdb                 # noqa: E402
@@ -93,7 +96,35 @@ pruefe(web.get("/static/mqtt.min.js").status_code == 200, "mqtt.min.js liegt lok
 pruefe(web.get("/api/info").get_json()["handy_url"].endswith(":5050/handy"), "Handy-Adresse für den QR-Code")
 pruefe(web.get("/qr.svg").status_code in (200, 404), "QR-Code-Adresse antwortet")
 
-# 5. Leeren für eine frische Vorführung.
+# 5. Absicherung (Tag 8): Rollen, Rechte, Zugang im Browser, Commit-Wächter.
+import funk_sicherheit as fs          # noqa: E402
+import importlib.util                 # noqa: E402
+pruefe(fdb.zugang("logger") == ("logger", "testpasswort-logger-123"), "zugang() liest das Passwort der Rolle aus der Umgebung")
+pruefe(fdb.zugang("gibtsnicht") is None, "Rolle ohne Passwort: kein Login (Betrieb wie Tag 5)")
+acl = fs.acl_text()
+pruefe("user board" in acl and "topic read lf07/zutritt/pin" not in acl.split("user board")[1].split("user ")[0],
+       "ACL: Board darf PINs nicht lesen")
+pruefe("topic write lf07/keypad/versuch" in acl.split("user keypad")[1].split("user ")[0] and acl.count("write lf07/keypad") == 1,
+       "ACL: nur die Rolle keypad darf Keypad-Meldungen senden")
+seite = web.get("/").data.decode("utf-8")
+pruefe("testpasswort-board-123" in seite and "__ZUGANG__" not in seite, "Board-Seite bekommt den Board-Zugang eingesetzt")
+fremde = [r for r in ("logger", "bruecke", "keypad", "sender", "handy") if f"testpasswort-{r}-123" in seite]
+pruefe(not fremde, "Board-Seite enthält keine anderen Passwörter")
+handy_seite = web.get("/handy").data.decode("utf-8")
+pruefe("testpasswort-handy-123" in handy_seite and "testpasswort-logger-123" not in handy_seite, "Handy-Seite: nur Handy-Zugang")
+spec = importlib.util.spec_from_file_location("waechter", Path(__file__).resolve().parents[2] / ".githooks" / "geheimnis_waechter.py")
+w = importlib.util.module_from_spec(spec); spec.loader.exec_module(w)
+pruefe(all(w.geheimer_name(n) for n in (".env", ".env.password", "uebungen/x/.env.local", "access.env")),
+       "Wächter erkennt .env, .env.password, .env.local, access.env")
+pruefe(not w.geheimer_name(".env.example") and not w.geheimer_name("funk_db.py"), "Wächter lässt .env.example und Code durch")
+probe = TMP / ".env.password"
+probe.write_text("MQTT_PASS_X=abcdefgh123\nKURZ=abc\n", encoding="utf-8")
+pruefe(w.geheimnisse_aus(probe, alle_werte=True) == {"abcdefgh123": (probe, "MQTT_PASS_X")}, "Wächter sammelt Passwörter, ignoriert zu kurze Werte")
+probe2 = TMP / "einstellungen.env"
+probe2.write_text("MQTT_HOST=raspberrypi.local\nDB_PASSWORT=sehr-geheim-99\n", encoding="utf-8")
+pruefe(list(w.geheimnisse_aus(probe2, alle_werte=False)) == ["sehr-geheim-99"], "in normaler .env nur Variablen mit PASS/TOKEN/KEY")
+
+# 6. Leeren für eine frische Vorführung.
 fdb.leeren(con)
 pruefe(fdb.anzahl(con) == 0, "leeren() löscht alle Events")
 

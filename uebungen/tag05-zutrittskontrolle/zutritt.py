@@ -50,8 +50,25 @@ try:
 except ImportError:
     mqtt_publish = None
 
+# Einstellungen und Passwort für den Funk liegen bei SENTINEL Funk (Ordner tag05-mqtt, Tag 8):
+# .env mit Host und Port, .env.password mit dem Passwort der Rolle "keypad".
+# python-dotenv lädt sie, schon gesetzte Variablen gewinnen. Fehlt das Paket, geht es ohne Login.
+try:
+    from dotenv import load_dotenv
+    from pathlib import Path
+    FUNK_ORDNER = Path(__file__).resolve().parent.parent / "tag05-mqtt"
+    load_dotenv(FUNK_ORDNER / ".env")
+    load_dotenv(FUNK_ORDNER / ".env.password")
+except ImportError:
+    pass
+
 # Broker für die Funk-Meldungen. Leer ("") schaltet den Funk ab (macht der Test so).
 MQTT_HOST = os.environ.get("MQTT_HOST", "localhost")
+# Port aus .env, Standard 1883.
+MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
+# Login der Rolle keypad. Die darf nur auf lf07/keypad/versuch senden, sonst nichts.
+MQTT_LOGIN = ({"username": "keypad", "password": os.environ["MQTT_PASS_KEYPAD"]}
+              if os.environ.get("MQTT_PASS_KEYPAD") else None)
 
 
 # Meldet das Ergebnis eines PIN-Versuchs an Mosquitto. Die PIN selbst wird NIE gesendet.
@@ -62,7 +79,7 @@ def funk_melden(ergebnis):
     # Eine einzelne Nachricht senden (verbinden, senden, trennen in einem Schritt).
     try:
         mqtt_publish.single("lf07/keypad/versuch", json.dumps({"wert": ergebnis, "sender": "Pi-Keypad"}),
-                            qos=1, hostname=MQTT_HOST)
+                            qos=1, hostname=MQTT_HOST, port=MQTT_PORT, auth=MQTT_LOGIN)
     # Läuft kein Broker, darf das die Zutrittskontrolle nicht stören.
     except Exception:
         pass

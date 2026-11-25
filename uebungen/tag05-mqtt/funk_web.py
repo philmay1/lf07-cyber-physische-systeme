@@ -16,6 +16,9 @@ Start auf dem Pi:  python3 funk_web.py
 # io baut eine Datei im Arbeitsspeicher (für das QR-Bild).
 import io
 
+# json schreibt die Zugangsdaten für den Browser in die Seite.
+import json
+
 # os liest Umgebungsvariablen (Port, eigene Adresse).
 import os
 
@@ -38,7 +41,10 @@ app = Flask(__name__)
 ORDNER = Path(__file__).resolve().parent
 
 # Port der Webseite. 5000 ist schon vom SENTINEL-Dashboard belegt.
-PORT = int(os.environ.get("PORT", 5050))
+PORT = int(os.environ.get("FUNK_PORT") or os.environ.get("PORT") or 5050)
+
+# Port für MQTT über WebSocket (Browser), Standard 9001.
+WS_PORT = int(os.environ.get("MQTT_WS_PORT", "9001"))
 
 
 # Findet die IP-Adresse, unter der Handys im selben WLAN den Pi erreichen.
@@ -65,16 +71,30 @@ def handy_url():
     return f"http://{eigene_ip()}:{PORT}/handy"
 
 
-# Startseite: das Live-Board.
+# Liest eine HTML-Seite und setzt die MQTT-Verbindungsdaten für die passende Rolle ein.
+# Wichtig: Alles, was im Browser landet, kann jeder Besucher sehen. Deshalb bekommen Board und
+# Handy nur Rollen mit wenig Rechten (siehe funk_sicherheit.py): Das Board darf nur lesen und sieht
+# keine PINs, das Handy darf nur Knöpfe und PINs senden. Andere Passwörter verlassen den Pi nie.
+def seite_mit_zugang(datei, rolle):
+    # Daten für mqtt.js: WebSocket-Port und, falls vorhanden, Benutzer und Passwort.
+    daten = {"port": WS_PORT}
+    login = fdb.zugang(rolle)
+    if login:
+        daten.update(username=login[0], password=login[1])
+    # Platzhalter __ZUGANG__ in der Seite durch JSON ersetzen.
+    return (ORDNER / datei).read_text(encoding="utf-8").replace("__ZUGANG__", json.dumps(daten))
+
+
+# Startseite: das Live-Board (Rolle board).
 @app.route("/")
 def board():
-    return (ORDNER / "board.html").read_text(encoding="utf-8")
+    return seite_mit_zugang("board.html", "board")
 
 
-# Die Seite für die Handys.
+# Die Seite für die Handys (Rolle handy).
 @app.route("/handy")
 def handy():
-    return (ORDNER / "handy.html").read_text(encoding="utf-8")
+    return seite_mit_zugang("handy.html", "handy")
 
 
 # Die neuesten Events und die Gesamtzahl aus der Datenbank.

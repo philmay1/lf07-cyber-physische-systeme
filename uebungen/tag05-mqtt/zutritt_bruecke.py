@@ -64,6 +64,9 @@ def verbunden(client, userdata, flags, rc, properties=None):
     if rc == 0:
         client.subscribe(PIN_THEMA, qos=1)
         print("Brücke bereit, warte auf PINs auf", PIN_THEMA)
+    # Sonst den Grund nennen (z. B. Login falsch).
+    else:
+        print(fdb.grund(rc))
 
 
 # Wird für jede PIN-Nachricht aufgerufen.
@@ -84,8 +87,9 @@ def beim_empfang(client, userdata, msg):
     ziel = str(daten.get("antwort", ""))
     # Nur einfache Namen erlauben, damit niemand in fremde Topics schreibt.
     if ziel.isalnum():
+        # von: wer die PIN geschickt hat. Das Board darf PINs selbst nicht lesen, sieht so aber den Namen.
         # wert und sender ergänzen, damit der Logger "gesperrt" von "SENTINEL" speichert.
-        antwort.update(wert=antwort["ergebnis"], sender="SENTINEL")
+        antwort.update(wert=antwort["ergebnis"], sender="SENTINEL", von=str(daten.get("sender", ""))[:20])
         client.publish(f"lf07/zutritt/antwort/{ziel}", json.dumps(antwort), qos=1)
 
 
@@ -100,7 +104,7 @@ def main():
     client.on_connect = verbunden
     client.on_message = beim_empfang
     # Verbinden und endlos warten.
-    client.connect(fdb.MQTT_HOST, 1883, keepalive=30)
+    client.connect(fdb.MQTT_HOST, fdb.MQTT_PORT, keepalive=30)
     try:
         client.loop_forever()
     # Strg+C: sauber beenden.

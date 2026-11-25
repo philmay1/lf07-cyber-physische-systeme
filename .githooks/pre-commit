@@ -1,0 +1,10 @@
+#!/bin/sh
+# Git startet diese Datei vor jedem Commit. Sie ruft den Geheimnis-Wächter auf.
+# Einschalten (einmal pro Klon):  git config core.hooksPath .githooks
+# Endet der Wächter mit Fehler (Code 1), bricht Git den Commit ab.
+
+# python3 auf Linux, python auf Windows (dort ist "python3" oft nur ein Platzhalter des Stores).
+if python3 -c "" 2>/dev/null; then PY=python3; else PY=python; fi
+
+# Wächter aus dem obersten Repo-Ordner starten. exec: sein Rückgabecode wird zu unserem.
+exec "$PY" "$(git rev-parse --show-toplevel)/.githooks/geheimnis_waechter.py"

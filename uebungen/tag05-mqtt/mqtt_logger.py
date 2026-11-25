@@ -32,7 +32,7 @@ def verbunden(client, userdata, flags, rc, properties=None):
         print(f"Verbunden mit {fdb.MQTT_HOST}, abonniert: {fdb.THEMA}")
     # Sonst war etwas falsch (z. B. Broker lehnt ab).
     else:
-        print("Broker lehnt die Verbindung ab, Code", rc)
+        print(fdb.grund(rc))
 
 
 # DIE Funktion aus der Aufgabe: läuft für jede Nachricht auf lf07/# einmal.
@@ -72,8 +72,8 @@ def main():
     # Unsere Funktionen als Rückrufe eintragen.
     client.on_connect = verbunden
     client.on_message = beim_empfang
-    # Mit dem Broker verbinden. 1883 ist der MQTT-Standardport, 30 s Lebenszeichen-Abstand.
-    client.connect(fdb.MQTT_HOST, 1883, keepalive=30)
+    # Mit dem Broker verbinden (Port aus .env, Standard 1883), 30 s Lebenszeichen-Abstand.
+    client.connect(fdb.MQTT_HOST, fdb.MQTT_PORT, keepalive=30)
     # Endlos auf Nachrichten warten. Bricht die Verbindung ab, verbindet paho selbst neu.
     try:
         client.loop_forever()

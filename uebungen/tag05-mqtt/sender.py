@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """MQTT-Sender: schickt Events an Mosquitto. Läuft auf dem Pi und auf dem Notebook.
 
-Braucht nur paho-mqtt (Notebook: pip install paho-mqtt).
+Braucht paho-mqtt und python-dotenv (Notebook: pip install paho-mqtt python-dotenv).
+Adresse und Passwort kommen aus .env und .env.password neben dieser Datei (Tag 8).
 
     python sender.py --anzahl 20                 20 Messwerte (Raumklima, simuliert) senden
     python sender.py --cpu --anzahl 20           20 echte Messwerte: CPU-Temperatur des Pi
     python sender.py --text "Hallo Klasse"       eine Nachricht senden
     python sender.py                             tippen, jede Zeile ist ein Event
-    python sender.py --host <IP-des-Pi> ...    anderer Broker (Standard: raspberrypi.local)
+    python sender.py --host <IP-des-Pi> ...      anderer Broker (Standard: MQTT_HOST aus .env)
 """
 # Die erste Zeile (#!) sagt Linux, dass Python 3 diese Datei ausführen soll.
 # Der Docstring darunter wird nicht ausgeführt. Er dient als Hilfetext (python sender.py -h).
@@ -36,6 +37,20 @@ try:
 except ImportError:
     raise SystemExit("paho-mqtt fehlt. Installieren mit:  pip install paho-mqtt")
 
+# Path findet .env und .env.password neben dieser Datei.
+from pathlib import Path
+
+# threading.Event wartet auf die Antwort des Brokers beim Verbinden.
+import threading
+
+# python-dotenv lädt .env (Einstellungen) und .env.password (Passwort). Fehlt es, geht es ohne Login.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parent / ".env")
+    load_dotenv(Path(__file__).resolve().parent / ".env.password")
+except ImportError:
+    pass
+
 # Hier steht auf dem Pi die CPU-Temperatur in Tausendstel Grad.
 CPU_DATEI = "/sys/class/thermal/thermal_zone0/temp"
 
@@ -46,10 +61,15 @@ def client_bauen(name):
     client_id = f"sender-{name}-{random.randint(1000, 9999)}"
     # paho 2.x braucht die Angabe der Rückruf-Version ...
     try:
-        return mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=client_id)
+        client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=client_id)
     # ... paho 1.x kennt sie nicht.
     except AttributeError:
-        return mqtt.Client(client_id=client_id)
+        client = mqtt.Client(client_id=client_id)
+    # Passwort der Rolle "sender" aus .env.password. Der Sender darf nur auf lf07/sender/# senden.
+    passwort = os.environ.get("MQTT_PASS_SENDER")
+    if passwort:
+        client.username_pw_set("sender", passwort)
+    return client
 
 
 # Schickt ein Event und wartet, bis der Broker es bestätigt hat.
@@ -96,25 +116,38 @@ def main():
 
     # Client bauen und verbinden.
     client = client_bauen(a.name)
+    # Hier landet die Antwort des Brokers auf den Verbindungswunsch (0 = angenommen).
+    antwort = {}
+    bereit = threading.Event()
+    # Wird aufgerufen, sobald der Broker antwortet. properties=None: paho 2.x schickt ein Argument mehr.
+    def verbunden(c, userdata, flags, rc, properties=None):
+        antwort["rc"] = int(getattr(rc, "value", rc))
+        bereit.set()
+    client.on_connect = verbunden
     # Verbindung herstellen. Klappt es nicht, einen verständlichen Hinweis geben.
     try:
-        client.connect(a.host, 1883, keepalive=30)
+        client.connect(a.host, int(os.environ.get("MQTT_PORT", "1883")), keepalive=30)
     except OSError as fehler:
         raise SystemExit(f"Kein Broker unter {a.host} erreichbar ({fehler}).\n"
                          "Tipp: IP des Pi angeben, z. B.  --host <IP-des-Pi>")
     # Netzwerk-Schleife im Hintergrund starten. Sie erledigt Senden und Bestätigungen.
     client.loop_start()
-    print(f"Verbunden mit {a.host} als {a.name}")
+    # Höchstens 5 s auf die Antwort warten. Ohne Login lehnt ein abgesicherter Broker ab.
+    if not bereit.wait(5) or antwort.get("rc") != 0:
+        client.loop_stop()
+        raise SystemExit(f"Broker {a.host} lehnt ab (Code {antwort.get('rc', 'keine Antwort')}).\n"
+                         "Login fehlt oder falsch: .env.password mit MQTT_PASS_SENDER neben sender.py legen.")
+    print(f"Verbunden mit {a.host} als {a.name}" + (" (Login: sender)" if os.environ.get("MQTT_PASS_SENDER") else ""))
 
     # try/finally: am Ende auf jeden Fall sauber trennen.
     try:
         # Fall 1: eine einzelne Nachricht.
         if a.text:
-            senden(client, f"lf07/{a.name}/text", a.text, a.name)
+            senden(client, f"lf07/sender/{a.name}/text", a.text, a.name)
         # Fall 2: echte CPU-Temperatur, so oft wie --anzahl sagt (mindestens 1).
         elif a.cpu:
             for _ in range(max(a.anzahl, 1)):
-                senden(client, "lf07/pi/cpu_temperatur", cpu_temperatur(), "Pi-Sensor")
+                senden(client, "lf07/sender/pi/cpu_temperatur", cpu_temperatur(), "Pi-Sensor")
                 time.sleep(a.abstand)
         # Fall 3: simulierte Messreihe "Raumklima". Die Temperatur schwankt leicht.
         elif a.anzahl:
@@ -122,7 +155,7 @@ def main():
             for i in range(1, a.anzahl + 1):
                 # Zufällig ein bisschen hoch oder runter, auf eine Nachkommastelle gerundet.
                 temperatur = round(temperatur + random.uniform(-0.3, 0.3), 1)
-                senden(client, f"lf07/{a.name}/temperatur", temperatur, a.name)
+                senden(client, f"lf07/sender/{a.name}/temperatur", temperatur, a.name)
                 time.sleep(a.abstand)
         # Fall 4: frei tippen. Jede Zeile wird ein Event, leere Zeile beendet.
         else:
@@ -131,7 +164,7 @@ def main():
                 zeile = input("> ").strip()
                 if not zeile:
                     break
-                senden(client, f"lf07/{a.name}/text", zeile, a.name)
+                senden(client, f"lf07/sender/{a.name}/text", zeile, a.name)
     # Strg+C beendet ohne Fehlermeldung.
     except KeyboardInterrupt:
         print()

@@ -2,6 +2,9 @@
 .env
 *.env
 secrets/
+# Tag 8: auch .env.password, .env.local usw. Nur Vorlagen wie .env.example gehören ins Repo.
+.env.*
+!.env.example
 
 # Python
 __pycache__/

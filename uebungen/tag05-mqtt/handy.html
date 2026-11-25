@@ -140,8 +140,11 @@ function name() {
   return n || 'Gast';
 }
 
-// Mit Mosquitto verbinden: WebSocket auf Port 9001 am selben Rechner, von dem die Seite kommt.
-const client = mqtt.connect('ws://' + location.hostname + ':9001', { clientId: 'handy-' + kennung });
+// Mit Mosquitto verbinden: WebSocket am selben Rechner, von dem die Seite kommt.
+// Zugangsdaten setzt der Pi beim Ausliefern ein (Rolle handy: darf nur Knöpfe und PINs senden).
+const ZUGANG = __ZUGANG__;
+const client = mqtt.connect('ws://' + location.hostname + ':' + ZUGANG.port,
+  { clientId: 'handy-' + kennung, username: ZUGANG.username, password: ZUGANG.password });
 // Alle Knöpfe zunächst sperren, bis die Verbindung steht.
 const alleKnoepfe = () => document.querySelectorAll('button');
 alleKnoepfe().forEach(b => b.disabled = true);

@@ -26,11 +26,25 @@ from pathlib import Path
 # paho-mqtt ist die MQTT-Bibliothek für Python.
 import paho.mqtt.client as mqtt
 
-# Datenbank-Datei: mqtt.db neben diesem Skript, außer FUNK_DB sagt etwas anderes.
-DB_DATEI = Path(os.environ.get("FUNK_DB") or Path(__file__).with_name("mqtt.db"))
+# Ordner dieses Skripts. Hier liegen .env (Einstellungen) und .env.password (Passwörter).
+HIER = Path(__file__).resolve().parent
 
-# Adresse des Brokers. Auf dem Pi läuft Mosquitto selbst, also "localhost".
+# python-dotenv lädt beide Dateien in die Umgebungsvariablen (Pi: sudo apt install python3-dotenv).
+# Schon gesetzte Variablen gewinnen, so kann ein Test oder ein einzelner Start eigene Werte vorgeben.
+# Fehlt das Paket oder fehlen die Dateien, läuft alles ohne Login weiter wie an Tag 5.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(HIER / ".env")
+    load_dotenv(HIER / ".env.password")
+except ImportError:
+    pass
+
+# Datenbank-Datei: mqtt.db neben diesem Skript, außer FUNK_DB sagt etwas anderes.
+DB_DATEI = Path(os.environ.get("FUNK_DB") or HIER / "mqtt.db")
+
+# Adresse und Port des Brokers. Auf dem Pi läuft Mosquitto selbst, also "localhost".
 MQTT_HOST = os.environ.get("MQTT_HOST", "localhost")
+MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
 
 # Alles, was mit lf07/ anfängt, gehört zu unserer Übung. # heißt: alle Unter-Topics.
 THEMA = "lf07/#"
@@ -118,13 +132,38 @@ def leeren(con):
         con.execute("DELETE FROM sqlite_sequence WHERE name = 'events'")
 
 
+# Zugangsdaten einer Rolle aus der Umgebung: Benutzer = Rollenname, Passwort aus .env.password.
+# Gibt None zurück, wenn es kein Passwort gibt (dann ohne Login, wie an Tag 5).
+def zugang(rolle):
+    # Name der Variable, z. B. MQTT_PASS_LOGGER.
+    passwort = os.environ.get(f"MQTT_PASS_{rolle.upper()}")
+    # Benutzer und Passwort als Paar, oder None.
+    return (rolle, passwort) if passwort else None
+
+
+# Übersetzt den Antwortcode des Brokers in einen verständlichen Satz.
+def grund(rc):
+    # paho 2.x liefert ein Objekt, paho 1.x eine Zahl. int() macht aus beidem eine Zahl.
+    rc = int(getattr(rc, "value", rc))
+    # 4 und 5 (MQTT 3.1.1) bzw. 134 und 135 (MQTT 5): Login falsch oder fehlt.
+    if rc in (4, 5, 134, 135):
+        return "Login abgelehnt. Passwort fehlt oder falsch? Auf dem Pi: bash funk.sh schluessel"
+    return f"Broker lehnt ab, Code {rc}"
+
+
 # Baut einen MQTT-Client, der mit paho-mqtt 1.x (Pi) und 2.x (Notebook) läuft.
-def client_bauen(name):
+# rolle: welcher MQTT-Benutzer (logger, bruecke, ...). Ohne Passwort wird ohne Login verbunden.
+def client_bauen(name, rolle=None):
     # Eindeutiger Name, z. B. "logger-4821". Zwei Clients mit gleichem Namen werfen sich gegenseitig raus.
     client_id = f"{name}-{random.randint(1000, 9999)}"
     # paho 2.x will wissen, welche Form die Rückruf-Funktionen haben.
     try:
-        return mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=client_id)
+        client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=client_id)
     # paho 1.x kennt CallbackAPIVersion noch nicht.
     except AttributeError:
-        return mqtt.Client(client_id=client_id)
+        client = mqtt.Client(client_id=client_id)
+    # Gibt es Zugangsdaten für die Rolle? Dann beim Verbinden mitschicken.
+    daten = zugang(rolle or name)
+    if daten:
+        client.username_pw_set(*daten)
+    return client
