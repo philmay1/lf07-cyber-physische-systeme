@@ -111,6 +111,12 @@ Tasks from class and the Raspberry Pi Beginner's Guide. They build the technolog
 
 Access control is 🟡 because its test table on the Pi is not fully ticked yet. It is the basis for projects 05 and 06.
 
+## Own project
+
+| | Project | What it does | Tech |
+|---|---|---|---|
+| <img src="eigenprojekt/telemetrie-labor/bilder/vergleich.jpg" width="160" alt="Lap comparison in the telemetry lab"> | [Telemetry lab](eigenprojekt/telemetrie-labor/) | The Pi analyses iRacing telemetry (`.ibt`) in the browser: finds and checks laps, draws the track from GPS, compares two laps with the time gap at every point. Software only, no parts | binary format, numpy memmap, SQLite, Flask REST API, canvas, uPlot, systemd, login via `.env.password` |
+
 ## Architecture
 
 The target picture for SENTINEL. Green parts are already built in projects or exercises.
@@ -242,6 +248,7 @@ Every project and every exercise uses the same layout, so everything is found in
 │   ├── tag04-ampel-dimmen/
 │   ├── tag05-zutrittskontrolle/    with dashboard and tests
 │   └── tag05-mqtt/                 with live board and tests
+├── eigenprojekt/telemetrie-labor/  analyse iRacing telemetry in the browser
 ├── docs/                           banner, badges
 ├── .github/vorlagen/               README templates for new projects
 ├── requirements.txt                Python packages

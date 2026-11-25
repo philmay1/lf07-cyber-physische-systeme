@@ -179,8 +179,8 @@ def api_bestenliste():
 
 # .ibt hochladen: zwischenspeichern, auswerten, speichern, Datei löschen.
 # Zwei Wege: Der Browser schickt die Datei als reinen Datenstrom (schnell, Name im Kopf X-Dateiname).
-# Ein Formular-Upload (z. B. curl -F datei=@...) geht auch, ist auf dem Pi aber etwa 10-mal langsamer,
-# weil Flask das Formular Byte für Byte in Python zerlegen muss.
+# Ein Formular-Upload (z. B. curl -F datei=@...) geht auch, dauert auf dem Pi aber gut doppelt so lange
+# (gemessen: 28 MB in 4,6 s statt 2,1 s), weil Flask das Formular in Python zerlegen muss.
 @app.route("/api/upload", methods=["POST"])
 def api_upload():
     if not darf_aendern():

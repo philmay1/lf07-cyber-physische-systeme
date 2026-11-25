@@ -111,6 +111,12 @@ Aufgaben aus dem Unterricht und dem Raspberry-Pi-Handbuch. Sie bauen die Technik
 
 Die Zutrittskontrolle steht auf 🟡, weil die Testtabelle am Pi noch nicht vollständig abgehakt ist. Sie ist die Grundlage für Projekt 05 und 06.
 
+## Eigenprojekt
+
+| | Projekt | Was es macht | Technik |
+|---|---|---|---|
+| <img src="eigenprojekt/telemetrie-labor/bilder/vergleich.jpg" width="160" alt="Rundenvergleich im Telemetrie-Labor"> | [Telemetrie-Labor](eigenprojekt/telemetrie-labor/) | Der Pi wertet iRacing-Telemetrie (`.ibt`) im Browser aus: Runden finden und prüfen, Streckenkarte aus GPS, zwei Runden mit Zeitabstand an jeder Stelle vergleichen. Reine Software, keine Bauteile | Binärformat, numpy memmap, SQLite, Flask-REST-API, Canvas, uPlot, systemd, Login per `.env.password` |
+
 ## Architektur
 
 Das Zielbild für SENTINEL. Grün ist in Projekten oder Übungen schon umgesetzt.
@@ -242,6 +248,7 @@ Jedes Projekt und jede Übung hat denselben Aufbau. So findet man sich überall 
 │   ├── tag04-ampel-dimmen/
 │   ├── tag05-zutrittskontrolle/    mit Dashboard und Tests
 │   └── tag05-mqtt/                 mit Live-Board und Tests
+├── eigenprojekt/telemetrie-labor/  iRacing-Telemetrie im Browser auswerten
 ├── docs/                           Banner, Badges
 ├── .github/vorlagen/               README-Vorlagen für neue Projekte
 ├── requirements.txt                Python-Pakete
