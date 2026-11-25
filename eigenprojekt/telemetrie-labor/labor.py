@@ -26,6 +26,12 @@ import os
 # secrets erzeugt Zufallswerte (Salt, Cookie-Schlüssel).
 import secrets
 
+# shutil kopiert den Upload-Datenstrom in eine Datei.
+import shutil
+
+# unquote macht aus "%C3%A4" wieder ein "ä" (Dateiname im Kopf der Anfrage).
+from urllib.parse import unquote
+
 # sys liest die Befehle (passwort, import).
 import sys
 
@@ -172,19 +178,27 @@ def api_bestenliste():
 
 
 # .ibt hochladen: zwischenspeichern, auswerten, speichern, Datei löschen.
+# Zwei Wege: Der Browser schickt die Datei als reinen Datenstrom (schnell, Name im Kopf X-Dateiname).
+# Ein Formular-Upload (z. B. curl -F datei=@...) geht auch, ist auf dem Pi aber etwa 10-mal langsamer,
+# weil Flask das Formular Byte für Byte in Python zerlegen muss.
 @app.route("/api/upload", methods=["POST"])
 def api_upload():
     if not darf_aendern():
         return verboten()
-    datei = request.files.get("datei")
-    if not datei or not datei.filename.lower().endswith(".ibt"):
-        return jsonify(ok=False, meldung="Bitte eine .ibt-Datei wählen."), 400
+    formular = request.files.get("datei")
     # Nur den Dateinamen behalten, nie einen mitgeschickten Pfad.
-    name = Path(datei.filename).name
+    name = Path(formular.filename if formular else unquote(request.headers.get("X-Dateiname", ""))).name
+    if not name.lower().endswith(".ibt"):
+        return jsonify(ok=False, meldung="Bitte eine .ibt-Datei wählen."), 400
     fd, tmp = tempfile.mkstemp(suffix=".ibt")
     os.close(fd)
     try:
-        datei.save(tmp)
+        if formular:
+            formular.save(tmp)
+        else:
+            # Datenstrom in 1-MB-Stücken direkt in die Datei schreiben.
+            with open(tmp, "wb") as f:
+                shutil.copyfileobj(request.stream, f, 1 << 20)
         sid = einlesen(tmp, name)
     except ValueError as fehler:
         return jsonify(ok=False, meldung=f"Datei nicht lesbar: {fehler}"), 400

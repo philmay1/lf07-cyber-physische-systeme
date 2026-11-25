@@ -107,9 +107,11 @@ function uploadEinrichten() {
 function hochladen(datei) {
   const balken = app.querySelector('.balken'), fuellung = balken.firstElementChild, text = document.getElementById('uploadText');
   balken.hidden = false;
-  const daten = new FormData(); daten.append('datei', datei);
   const x = new XMLHttpRequest();
   x.open('POST', '/api/upload');
+  // Datei als reinen Datenstrom schicken (schneller als ein Formular), den Namen im Kopf der Anfrage.
+  x.setRequestHeader('Content-Type', 'application/octet-stream');
+  x.setRequestHeader('X-Dateiname', encodeURIComponent(datei.name));
   const start = performance.now();
   x.upload.onprogress = e => {
     const p = e.loaded / e.total * 100;
@@ -125,7 +127,7 @@ function hochladen(datei) {
     } else { text.innerHTML = `<span class="fehler">${esc(j.meldung || 'Upload fehlgeschlagen')}</span>`; }
   };
   x.onerror = () => text.innerHTML = '<span class="fehler">Verbindung abgebrochen.</span>';
-  x.send(daten);
+  x.send(datei);
 }
 
 // ---------- Sitzung: Runden ----------

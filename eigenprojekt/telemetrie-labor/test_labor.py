@@ -131,7 +131,15 @@ pruefe(web.get("/api/status").get_json()["darf_aendern"], "ohne Passwort: Änder
 with open(datei, "rb") as f:
     antwort = web.post("/api/upload", data={"datei": (f, datei.name)}, content_type="multipart/form-data")
 pruefe(antwort.status_code == 200 and antwort.get_json()["ok"], "Upload über die API")
-pruefe(len(web.get("/api/sitzungen").get_json()) == 2, "zweite Sitzung gespeichert")
+pruefe(len(web.get("/api/sitzungen").get_json()) == 2, "zweite Sitzung gespeichert (Formular-Upload)")
+antwort = web.post("/api/upload", data=datei.read_bytes(), headers={"X-Dateiname": "roh%20test.ibt"},
+                   content_type="application/octet-stream")
+roh = [s for s in web.get("/api/sitzungen").get_json() if s["datei"] == "roh test.ibt"]
+pruefe(antwort.get_json()["ok"] and len(roh) == 1,
+       "Upload als Datenstrom, Dateiname aus dem Kopf")
+pruefe(web.post("/api/upload", data=b"x", headers={"X-Dateiname": "..%2F..%2Fboese.txt"},
+                content_type="application/octet-stream").status_code == 400, "nur .ibt, kein Pfad aus dem Dateinamen")
+labor_db.loeschen(con, roh[0]["id"])
 pruefe(web.get("/api/upload").status_code == 405, "Upload nur per POST")
 fremd = web.get("/api/status", environ_base={"REMOTE_ADDR": "192.168.1.50"}).get_json()
 pruefe(not fremd["darf_aendern"], "ohne Passwort darf ein anderer Rechner nichts ändern")
