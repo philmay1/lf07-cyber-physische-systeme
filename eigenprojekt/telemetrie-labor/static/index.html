@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Telemetrie-Labor</title>
+<!-- Diagramm-Bibliothek uPlot (liegt lokal auf dem Pi, kein Internet nötig) -->
+<link rel="stylesheet" href="/static/uPlot.min.css">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <a class="logo" href="#/"><span class="punkt"></span>TELEMETRIE-LABOR</a>
+  <span class="unter">iRacing-Telemetrie · ausgewertet auf dem Raspberry Pi 400</span>
+  <nav>
+    <a href="#/">Sitzungen</a>
+    <a href="#/bestenliste">Bestenliste</a>
+    <a href="#/info">So funktioniert's</a>
+    <button id="login" class="klein">Anmelden</button>
+  </nav>
+</header>
+<main id="app"><p class="leise">Lade ...</p></main>
+
+<!-- Anmelde-Fenster -->
+<div id="loginFenster" class="fenster" hidden>
+  <form id="loginForm" class="karte">
+    <h3>Anmelden</h3>
+    <p class="leise">Nötig zum Hochladen und Löschen. Ansehen geht ohne.</p>
+    <input id="loginPasswort" type="password" placeholder="Passwort" autocomplete="current-password">
+    <div class="zeile"><button type="submit">Anmelden</button><button type="button" id="loginAbbruch" class="zweit">Abbrechen</button></div>
+    <p id="loginFehler" class="fehler"></p>
+  </form>
+</div>
+
+<script src="/static/uPlot.iife.min.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

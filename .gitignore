@@ -26,3 +26,6 @@ Thumbs.db
 config.ini
 *.key
 access.env
+
+# Telemetrie-Labor: iRacing-Rohdaten enthalten Namen und IDs fremder Fahrer, nie ins Repo
+*.ibt
