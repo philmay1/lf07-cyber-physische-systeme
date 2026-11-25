@@ -139,6 +139,46 @@ def api_logout():
     return jsonify(ok=True)
 
 
+# Zustand des Pi für die Statusleiste: Temperatur, Last, Speicher, Laufzeit.
+# Linux legt diese Werte als Textdateien ab (/sys, /proc). Fehlt eine Datei (z. B. unter Windows), kommt None.
+@app.route("/api/system")
+def api_system():
+    return jsonify(systemwerte())
+
+
+def systemwerte():
+    werte = {"port": PORT}
+    # CPU-Temperatur in Tausendstel Grad, z. B. "48312" = 48,3 °C.
+    try:
+        werte["cpu_temp"] = int(Path("/sys/class/thermal/thermal_zone0/temp").read_text()) / 1000
+    except (OSError, ValueError):
+        werte["cpu_temp"] = None
+    # Laufzeit seit dem letzten Start in Sekunden (erste Zahl in /proc/uptime).
+    try:
+        werte["laufzeit_s"] = int(float(Path("/proc/uptime").read_text().split()[0]))
+    except (OSError, ValueError, IndexError):
+        werte["laufzeit_s"] = None
+    # Last: wie viele Prozesse im Schnitt der letzten Minute auf die CPU warten (4 Kerne: unter 4 ist entspannt).
+    try:
+        werte["last"] = os.getloadavg()[0]
+    except (OSError, AttributeError):
+        werte["last"] = None
+    # Arbeitsspeicher: belegt in Prozent, aus MemTotal und MemAvailable in /proc/meminfo.
+    try:
+        info = dict(z.split(":", 1) for z in Path("/proc/meminfo").read_text().splitlines() if ":" in z)
+        gesamt, frei = int(info["MemTotal"].split()[0]), int(info["MemAvailable"].split()[0])
+        werte["ram_prozent"] = round((gesamt - frei) / gesamt * 100)
+    except (OSError, KeyError, ValueError, ZeroDivisionError):
+        werte["ram_prozent"] = None
+    # Größe der Datenbank und freier Platz auf der SD-Karte.
+    try:
+        werte["db_mb"] = Path(labor_db.DB_DATEI).stat().st_size / 1e6
+    except OSError:
+        werte["db_mb"] = None
+    werte["frei_gb"] = shutil.disk_usage(HIER).free / 1e9
+    return werte
+
+
 # Liste aller Sitzungen.
 @app.route("/api/sitzungen")
 def api_sitzungen():

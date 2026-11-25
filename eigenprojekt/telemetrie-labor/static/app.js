@@ -20,6 +20,13 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 const zeit = s => s == null ? '–' : `${Math.floor(s / 60)}:${(s % 60).toFixed(3).padStart(6, '0')}`;
 // Differenz mit Vorzeichen: +0.214 / -0.051.
 const diff = s => (s >= 0 ? '+' : '−') + Math.abs(s).toFixed(3);
+// Farbe aus dem Design holen (style.css, Variable --name). So passen Karte und Diagramme zum gewählten Thema.
+const farbe = name => getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim();
+// Seitenkopf: kleine Rubrik in Akzentfarbe, großer Titel, Unterzeile.
+const seitenkopf = (rubrik, titel, unter) =>
+  `<p class="rubrik">${rubrik}</p><h1>${titel}</h1>${unter ? `<p class="leise">${unter}</p>` : ''}`;
+// Zwischenüberschrift mit Kapitelnummer: abschnitt('02', 'Rundenzeiten').
+const abschnitt = (nr, titel, zusatz) => `<h2><span class="nr">${nr}</span>${titel}${zusatz ? ` <span class="leise">${zusatz}</span>` : ''}</h2>`;
 // Daten vom Server holen (JSON).
 async function api(url, opt) {
   const r = await fetch(url, opt);
@@ -54,10 +61,35 @@ document.getElementById('loginForm').addEventListener('submit', async e => {
   } catch (err) { fehler.textContent = err.message; }
 });
 
+// ---------- Statusleiste: der Pi meldet sich ----------
+// Holt alle 10 Sekunden CPU-Temperatur, Last, Speicher und Laufzeit vom Pi (/api/system).
+// Das ist der Blick des Admins: Läuft der Server, wie warm ist er, wie voll ist die Platte?
+async function statusleiste() {
+  const leiste = document.getElementById('status');
+  try {
+    const s = await api('/api/system');
+    const tage = Math.floor(s.laufzeit_s / 86400), std = Math.floor(s.laufzeit_s % 86400 / 3600);
+    const teil = (name, wert) => wert == null ? '' : `<span>${name} <b>${wert}</b></span>`;
+    leiste.innerHTML = `<span class="an"><b>Pi online</b></span>` +
+      teil('CPU', s.cpu_temp == null ? null : s.cpu_temp.toFixed(1) + ' °C') +
+      teil('Last', s.last == null ? null : s.last.toFixed(2)) +
+      teil('RAM', s.ram_prozent == null ? null : s.ram_prozent + ' %') +
+      teil('Laufzeit', s.laufzeit_s == null ? null : `${tage} d ${std} h`) +
+      teil('Datenbank', (s.db_mb ?? 0).toFixed(1) + ' MB') +
+      teil('SD frei', s.frei_gb == null ? null : s.frei_gb.toFixed(1) + ' GB') +
+      teil('Dienst', 'telemetrie-labor :' + s.port);
+  } catch (e) {
+    leiste.innerHTML = '<span><b style="color:var(--schlecht)">Pi nicht erreichbar</b></span>';
+  }
+}
+
 // ---------- Seitenwechsel ----------
 async function zeigen() {
   diagramme.forEach(d => d.destroy()); diagramme = [];
   const teile = location.hash.replace(/^#\/?/, '').split('/');
+  // Menüpunkt der aktuellen Seite hervorheben (Sitzung und Vergleich zählen zu "Sitzungen").
+  const seite = ['bestenliste', 'info'].includes(teile[0]) ? teile[0] : '';
+  document.querySelectorAll('.menue a').forEach(a => a.classList.toggle('aktiv', a.dataset.seite === seite));
   try {
     if (teile[0] === 'sitzung') await ansichtSitzung(+teile[1]);
     else if (teile[0] === 'vergleich') await ansichtVergleich(+teile[1], +(teile[2] || teile[1]));
@@ -72,24 +104,28 @@ window.addEventListener('hashchange', zeigen);
 // ---------- Start: Upload und Sitzungen ----------
 async function ansichtStart() {
   const liste = await api('/api/sitzungen');
+  // Schnellste Runde je Strecke finden: die steht in der Liste lila.
+  const rekord = {};
+  liste.forEach(s => { if (s.beste != null && !(rekord[s.strecke] <= s.beste)) rekord[s.strecke] = s.beste; });
   app.innerHTML = `
-    <h1>Sitzungen</h1>
-    <p class="leise">.ibt-Datei hochladen. Der Pi zerlegt sie in Runden, prüft jede Runde und speichert die Messkurven in SQLite.</p>
-    <div class="karte upload" id="upload">
+    ${seitenkopf('Daten-Eingang', 'Sitzungen', 'iRacing-Datei hochladen. Der Pi zerlegt sie in Runden, prüft jede Runde und speichert die Messkurven in der Datenbank.')}
+    ${abschnitt('01', 'Upload')}
+    <div class="upload" id="upload">
       ${STATUS.darf_aendern
-        ? `<p><b>.ibt hierher ziehen</b> oder <button id="waehlen">Datei wählen</button></p>
+        ? `<p><b>.ibt-Datei hierher ziehen</b> oder <button id="waehlen" class="klein">Datei wählen</button></p>
            <p class="leise mono">Dokumente\\iRacing\\telemetry · bis ${STATUS.max_mb} MB</p>
            <input id="datei" type="file" accept=".ibt" hidden>
            <div class="balken" hidden><div></div></div><p id="uploadText" class="leise"></p>`
         : `<p class="leise">Zum Hochladen ${STATUS.login_noetig ? 'oben rechts anmelden' : 'die Seite direkt am Pi öffnen'}.</p>`}
     </div>
-    <h2>${liste.length} Sitzungen</h2>
+    ${abschnitt('02', 'Gespeicherte Sitzungen', `${liste.length} Stück · lila = Streckenrekord im Labor`)}
     ${liste.length ? `<div class="karte"><table>
-      <tr><th>Gefahren</th><th>Strecke</th><th>Auto</th><th>Art</th><th>Runden</th><th>Beste Runde</th></tr>
+      <tr><th>Gefahren</th><th>Strecke</th><th>Auto</th><th>Art</th><th>Runden sauber / alle</th><th>Beste Runde</th></tr>
       ${liste.map(s => `<tr class="klickbar" data-id="${s.id}">
         <td class="mono">${esc(s.datum)}</td><td>${esc(s.strecke)}${s.layout ? ` <span class="leise">${esc(s.layout)}</span>` : ''}</td>
-        <td>${esc(s.auto)}</td><td><span class="marke">${esc(s.typ)}</span></td>
-        <td class="mono">${s.gueltige || 0} / ${s.runden}</td><td class="mono">${zeit(s.beste)}</td></tr>`).join('')}
+        <td>${esc(s.auto)}</td><td><span class="marke ${/race|rennen/i.test(s.typ) ? 'rennen' : ''}">${esc(s.typ)}</span></td>
+        <td class="mono">${s.gueltige || 0} / ${s.runden}</td>
+        <td class="mono ${s.beste != null && s.beste === rekord[s.strecke] ? 'lila' : ''}">${zeit(s.beste)}</td></tr>`).join('')}
     </table></div>` : '<p class="leise">Noch nichts hochgeladen.</p>'}`;
   app.querySelectorAll('tr[data-id]').forEach(tr => tr.addEventListener('click', () => location.hash = `#/sitzung/${tr.dataset.id}`));
   if (STATUS.darf_aendern) uploadEinrichten();
@@ -142,29 +178,30 @@ async function ansichtSitzung(id) {
   const hoehe = z => Math.max(6, Math.min(100, (z - unten) / (oben - unten) * 100));
   app.innerHTML = `
     <p><a href="#/">← Sitzungen</a></p>
-    <h1>${esc(s.strecke)} ${s.layout ? `<span class="leise">${esc(s.layout)}</span>` : ''}</h1>
-    <p class="leise">${esc(s.auto)} · ${esc(s.typ)} · ${esc(s.datum)} · ${(s.laenge_m / 1000).toFixed(3)} km · Datei ${esc(s.datei)}</p>
-    <div class="kacheln">
+    ${seitenkopf(`Sitzung ${s.id} · ${esc(s.typ)}`, `${esc(s.strecke)} ${s.layout ? `<span class="leise">${esc(s.layout)}</span>` : ''}`,
+      `${esc(s.auto)} · ${esc(s.datum)} · ${(s.laenge_m / 1000).toFixed(3)} km · Datei ${esc(s.datei)}`)}
+    <div class="kacheln" style="margin-top:18px">
       <div class="kachel"><small>Runden</small><b>${s.runden.length}</b></div>
       <div class="kachel"><small>davon sauber</small><b>${gueltig.length}</b></div>
-      <div class="kachel"><small>Beste Runde</small><b class="mono">${zeit(beste?.zeit)}</b></div>
-      <div class="kachel"><small>Ø sauber</small><b class="mono">${zeit(gueltig.length ? gueltig.reduce((a, r) => a + r.zeit, 0) / gueltig.length : null)}</b></div>
+      <div class="kachel"><small>Beste Runde</small><b class="lila">${zeit(beste?.zeit)}</b></div>
+      <div class="kachel"><small>Ø sauber</small><b>${zeit(gueltig.length ? gueltig.reduce((a, r) => a + r.zeit, 0) / gueltig.length : null)}</b></div>
       <div class="kachel"><small>Höchsttempo</small><b>${Math.max(...s.runden.map(r => r.vmax)).toFixed(0)} km/h</b></div>
     </div>
-    <h2>Rundenzeiten <span class="leise">(klicken = für den Vergleich wählen, grün = beste, grau = ungültig)</span></h2>
+    ${abschnitt('01', 'Rundenzeiten', 'klicken = für den Vergleich wählen')}
     <div class="karte"><div class="saeulen">${s.runden.map(r => `<div class="saeule ${r.gueltig ? '' : 'ungueltig'} ${beste && r.id === beste.id ? 'beste' : ''}"
-      data-id="${r.id}" style="height:${hoehe(r.zeit)}%" title="Runde ${r.nummer}: ${zeit(r.zeit)}${r.grund ? ' (' + esc(r.grund) + ')' : ''}"></div>`).join('')}</div></div>
+      data-id="${r.id}" style="height:${hoehe(r.zeit)}%" title="Runde ${r.nummer}: ${zeit(r.zeit)}${r.grund ? ' (' + esc(r.grund) + ')' : ''}"></div>`).join('')}</div>
+      <p class="hinweis">Jede Säule ist eine Runde. Je höher, desto langsamer. Lila = schnellste Runde, grau = ungültig (Box, Ausritt, Lücke).</p></div>
     <div class="zeile" style="margin-top:12px">
-      <button id="vergleichen">Gewählte Runden vergleichen</button><span id="wahlText" class="leise"></span>
+      <button id="vergleichen">Gewählte Runden vergleichen</button><span id="wahlText" class="leise mono"></span>
       ${STATUS.darf_aendern ? '<button id="loeschen" class="gefahr klein" style="margin-left:auto">Sitzung löschen</button>' : ''}
     </div>
-    <h2>Alle Runden</h2>
+    ${abschnitt('02', 'Alle Runden')}
     <div class="karte"><table>
       <tr><th></th><th>Runde</th><th>Zeit</th><th>zur Besten</th><th>Höchsttempo</th><th>Sprit</th><th>Status</th></tr>
       ${s.runden.map(r => `<tr class="klickbar ${r.gueltig ? '' : 'ungueltig'} ${beste && r.id === beste.id ? 'beste' : ''}" data-id="${r.id}">
-        <td><input type="checkbox" data-id="${r.id}"></td><td>${r.nummer}</td><td class="mono">${zeit(r.zeit)}</td>
-        <td class="mono">${beste ? diff(r.zeit - beste.zeit) : ''}</td><td>${r.vmax.toFixed(0)} km/h</td>
-        <td>${r.sprit > 0 ? r.sprit.toFixed(2) + ' l' : '–'}</td><td>${r.gueltig ? 'sauber' : `<span class="marke">${esc(r.grund)}</span>`}</td></tr>`).join('')}
+        <td><input type="checkbox" data-id="${r.id}"></td><td class="mono">${r.nummer}</td><td class="mono">${zeit(r.zeit)}</td>
+        <td class="mono">${beste ? diff(r.zeit - beste.zeit) : ''}</td><td class="mono">${r.vmax.toFixed(0)} km/h</td>
+        <td class="mono">${r.sprit > 0 ? r.sprit.toFixed(2) + ' l' : '–'}</td><td>${r.gueltig ? 'sauber' : `<span class="marke">${esc(r.grund)}</span>`}</td></tr>`).join('')}
     </table></div>`;
   // Auswahl anzeigen (Säulen umrahmen, Häkchen setzen, Text).
   const auffrischen = () => {
@@ -212,31 +249,31 @@ async function ansichtVergleich(idA, idB) {
 
   app.innerHTML = `
     <p><a href="#/sitzung/${A.sitzung_id}">← Sitzung</a></p>
-    <h1>${esc(A.strecke)}</h1>
+    ${seitenkopf('Rundenvergleich', esc(A.strecke))}
     <div class="legende" style="margin:6px 0 4px">
       <span><i style="background:var(--a)"></i><b class="a">A</b> ${titel(A)}</span>
       ${allein ? '' : `<span><i style="background:var(--b)"></i><b class="b">B</b> ${titel(B)}</span>`}
     </div>
-    <div class="zeile" style="margin:8px 0 14px"><span class="leise">B wählen:</span>
+    <div class="zeile" style="margin:10px 0 16px"><span class="leise">B wählen:</span>
       <select id="wahlB">${andere.map(r => `<option value="${r.id}" ${r.id === idB ? 'selected' : ''}>${zeit(r.zeit)} · ${esc(r.auto)} · Runde ${r.nummer} · ${esc(r.datum)}</option>`).join('')}</select>
       <button id="tauschen" class="zweit klein">A ⇄ B</button></div>
     ${allein ? '' : `<div class="kacheln">
-      <div class="kachel"><small>B gegenüber A</small><b class="mono ${B.zeit > A.zeit ? 'plus' : 'minus'}">${diff(B.zeit - A.zeit)} s</b></div>
-      <div class="kachel"><small>B verliert am meisten</small><b>${schlimmster.d > 0 ? `${diff(schlimmster.d)} s` : '–'}</b><br><span class="leise">${schlimmster.d > 0 ? `km ${schlimmster.von.toFixed(1)} bis ${schlimmster.bis.toFixed(1)}` : ''}</span></div>
-      <div class="kachel"><small>B gewinnt am meisten</small><b>${bester.d < 0 ? `${diff(bester.d)} s` : '–'}</b><br><span class="leise">${bester.d < 0 ? `km ${bester.von.toFixed(1)} bis ${bester.bis.toFixed(1)}` : ''}</span></div>
+      <div class="kachel"><small>B gegenüber A</small><b class="${B.zeit > A.zeit ? 'plus' : 'minus'}">${diff(B.zeit - A.zeit)} s</b></div>
+      <div class="kachel"><small>B verliert am meisten</small><b>${schlimmster.d > 0 ? `${diff(schlimmster.d)} s` : '–'}</b><br><span class="leise mono">${schlimmster.d > 0 ? `km ${schlimmster.von.toFixed(1)} bis ${schlimmster.bis.toFixed(1)}` : ''}</span></div>
+      <div class="kachel"><small>B gewinnt am meisten</small><b>${bester.d < 0 ? `${diff(bester.d)} s` : '–'}</b><br><span class="leise mono">${bester.d < 0 ? `km ${bester.von.toFixed(1)} bis ${bester.bis.toFixed(1)}` : ''}</span></div>
       <div class="kachel"><small>Höchsttempo A / B</small><b>${A.vmax.toFixed(0)} / ${B.vmax.toFixed(0)}</b></div>
     </div>`}
-    <div class="vergleich" style="margin-top:14px">
+    <div class="vergleich" style="margin-top:16px">
       <div class="links">
-        <div class="karte"><canvas id="karte"></canvas>
-          <div class="legende" style="margin-top:8px"><span><i style="background:var(--bremse)"></i>Bremse</span><span><i style="background:var(--gas)"></i>Vollgas</span><span><i style="background:#c9a227"></i>Teilgas</span><span><i style="background:#4b5d73"></i>Rollen</span>${allein ? '' : '<span><i style="background:rgba(255,159,28,.5)"></i>größter Verlust</span>'}</div>
-          <p class="ablesen" id="ablesen">Maus über die Diagramme bewegen.</p>
+        <div class="karte"><h3>Streckenkarte aus GPS</h3><canvas id="karte"></canvas>
+          <div class="legende" style="margin-top:8px"><span><i style="background:var(--bremse)"></i>Bremse</span><span><i style="background:var(--gas)"></i>Vollgas</span><span><i style="background:var(--teilgas)"></i>Teilgas</span><span><i style="background:var(--rollen)"></i>Rollen</span>${allein ? '' : '<span><i style="background:var(--verlust)"></i>größter Verlust</span>'}</div>
+          <p class="ablesen" id="ablesen">Maus über die Diagramme bewegen: die Punkte zeigen, wo A und B gerade sind.</p>
         </div>
-        ${allein ? '' : `<div class="karte" style="margin-top:12px"><h3>Abschnitte (B gegenüber A)</h3><table class="abschnitte">
+        ${allein ? '' : `<div class="karte" style="margin-top:12px"><h3>Abschnitte: B gegenüber A</h3><table class="abschnitte">
           ${abschnitte.map(a => `<tr><td class="mono">km ${a.von.toFixed(1)}–${a.bis.toFixed(1)}</td><td class="mono ${a.d > 0 ? 'plus' : 'minus'}">${diff(a.d)}</td>
             <td class="balkenzelle"><div class="dbalken" style="width:${Math.abs(a.d) / maxD * 100}%;background:${a.d > 0 ? 'var(--schlecht)' : 'var(--gut)'}"></div></td>
             <td class="leise mono">${a.minA.toFixed(0)} / ${a.minB.toFixed(0)}</td></tr>`).join('')}
-          </table><p class="leise" style="font-size:12px">letzte Spalte: langsamstes Tempo im Abschnitt, A / B in km/h</p></div>`}
+          </table><p class="hinweis">Rot = B verliert dort Zeit, grün = B ist schneller. Rechts: langsamstes Tempo im Abschnitt, A / B in km/h.</p></div>`}
       </div>
       <div id="diagramme"></div>
     </div>`;
@@ -245,35 +282,40 @@ async function ansichtVergleich(idA, idB) {
 
   // Streckenkarte zeichnen.
   const karte = karteVorbereiten(document.getElementById('karte'), A, B, allein ? null : schlimmster);
-  // Diagramme: jedes bekommt eine Liste von Linien.
-  const C = getComputedStyle(document.documentElement);
-  const fa = C.getPropertyValue('--a').trim(), fb = C.getPropertyValue('--b').trim();
+  // Diagramme: Titel, Linien [Daten, Farbe, Name, Strichmuster], Höhe in Pixeln, Lesehilfe.
+  const fa = farbe('a'), fb = farbe('b'), fgas = farbe('gas'), fbremse = farbe('bremse');
   const linien = [
-    ...(allein ? [] : [['Zeitabstand B − A (s)', [[delta, fb, 'Δ']], 150]]),
-    ['Tempo (km/h)', [[A.kanaele.speed, fa, 'A'], ...(allein ? [] : [[B.kanaele.speed, fb, 'B']])], 200],
-    ['Gas und Bremse (%)', [[A.kanaele.gas, '#2ee59d', 'Gas A'], [A.kanaele.bremse, '#ff4d5e', 'Bremse A'],
-      ...(allein ? [] : [[B.kanaele.gas, '#2ee59d', 'Gas B', [5, 4]], [B.kanaele.bremse, '#ff4d5e', 'Bremse B', [5, 4]]])], 160],
-    ['Gang', [[A.kanaele.gang, fa, 'A'], ...(allein ? [] : [[B.kanaele.gang, fb, 'B']])], 110],
-    ['Lenkwinkel (Grad)', [[A.kanaele.lenkung, fa, 'A'], ...(allein ? [] : [[B.kanaele.lenkung, fb, 'B']])], 130],
+    ...(allein ? [] : [['Zeitabstand B − A (s)', [[delta, fb, 'Δ']], 150,
+      'Steigt die Linie, verliert B dort Zeit. Fällt sie, holt B auf. Der Wert am Ende ist der Abstand im Ziel.']]),
+    ['Tempo (km/h)', [[A.kanaele.speed, fa, 'A'], ...(allein ? [] : [[B.kanaele.speed, fb, 'B']])], 200,
+      'Die Täler sind die Kurven. Je tiefer das Tal, desto langsamer die Kurve.'],
+    ['Gas und Bremse (%)', [[A.kanaele.gas, fgas, 'Gas A'], [A.kanaele.bremse, fbremse, 'Bremse A'],
+      ...(allein ? [] : [[B.kanaele.gas, fgas, 'Gas B', [5, 4]], [B.kanaele.bremse, fbremse, 'Bremse B', [5, 4]]])], 160,
+      'Durchgezogen = A, gestrichelt = B. Wer später bremst und früher Gas gibt, ist schneller.'],
+    ['Gang', [[A.kanaele.gang, fa, 'A'], ...(allein ? [] : [[B.kanaele.gang, fb, 'B']])], 110, ''],
+    ['Lenkwinkel (Grad)', [[A.kanaele.lenkung, fa, 'A'], ...(allein ? [] : [[B.kanaele.lenkung, fb, 'B']])], 130,
+      'Ausschlag nach oben = links, nach unten = rechts. Ruhige Linie = ruhiges Auto.'],
   ];
   const ziel = document.getElementById('diagramme');
   const sync = uPlot.sync('labor');
-  for (const [name, reihen, h] of linien) {
+  // Achsen in den Farben und der Zahlenschrift des Themas.
+  const achse = { stroke: farbe('achse'), grid: { stroke: farbe('gitter') }, ticks: { stroke: farbe('gitter') }, font: '12px "JetBrains Mono", monospace' };
+  for (const [name, reihen, h, lesehilfe] of linien) {
     const box = document.createElement('div'); box.className = 'diagramm';
     box.innerHTML = `<div class="titel">${name}</div>`; ziel.appendChild(box);
     const u = new uPlot({
-      width: box.clientWidth - 20, height: h,
+      width: box.clientWidth - 24, height: h,
       cursor: { sync: { key: sync.key }, points: { show: false } },
       scales: { x: { time: false } },
-      axes: [{ stroke: '#8494a8', grid: { stroke: '#1b2533' }, ticks: { stroke: '#1b2533' }, values: (u, v) => v.map(x => x.toFixed(1) + ' km') },
-             { stroke: '#8494a8', grid: { stroke: '#1b2533' }, ticks: { stroke: '#1b2533' }, size: 50 }],
-      series: [{}, ...reihen.map(([_, farbe, label, strich]) => ({ label, stroke: farbe, width: 1.6, dash: strich, points: { show: false } }))],
+      axes: [{ ...achse, values: (u, v) => v.map(x => x.toFixed(1) + ' km') }, { ...achse, size: 54 }],
+      series: [{}, ...reihen.map(([_, f, label, strich]) => ({ label, stroke: f, width: 1.6, dash: strich, points: { show: false } }))],
       hooks: { setCursor: [u => { if (u.cursor.idx != null) karte.markieren(u.cursor.idx); }] },
     }, [km, ...reihen.map(r => r[0])], box);
+    if (lesehilfe) box.insertAdjacentHTML('beforeend', `<p class="hinweis">${lesehilfe}</p>`);
     diagramme.push(u);
   }
   // Fenstergröße geändert: Diagramme mitziehen.
-  window.onresize = () => diagramme.forEach(u => u.setSize({ width: u.root.parentElement.clientWidth - 20, height: u.height }));
+  window.onresize = () => diagramme.forEach(u => u.setSize({ width: u.root.parentElement.clientWidth - 24, height: u.height }));
 }
 
 // Zeichnet die Strecke aus GPS-Punkten, eingefärbt nach Gas und Bremse von Runde A.
@@ -290,34 +332,37 @@ function karteVorbereiten(canvas, A, B, verlust) {
   const proj = (x, y) => [rand + (x - minX) / m * (w - 2 * rand) + ((m - (maxX - minX)) / m) * (w - 2 * rand) / 2,
                           rand + (maxY - y) / m * (w - 2 * rand) + ((m - (maxY - minY)) / m) * (w - 2 * rand) / 2];
   const punkt = (R, i) => proj(R.kanaele.lon[i] * k, R.kanaele.lat[i]);
-  // Farbe je nach Fahrereingabe.
-  const farbe = i => A.kanaele.bremse[i] > 5 ? '#ff4d5e' : A.kanaele.gas[i] > 95 ? '#2ee59d' : A.kanaele.gas[i] > 10 ? '#c9a227' : '#4b5d73';
+  // Farben aus dem Thema holen (einmal, nicht bei jedem Punkt).
+  const F = { bremse: farbe('bremse'), gas: farbe('gas'), teilgas: farbe('teilgas'), rollen: farbe('rollen'),
+              verlust: farbe('verlust'), text: farbe('text'), bg: farbe('bg'), a: farbe('a'), b: farbe('b') };
+  // Farbe je nach Fahrereingabe: Bremse vor Vollgas vor Teilgas, sonst Rollen.
+  const farbeBei = i => A.kanaele.bremse[i] > 5 ? F.bremse : A.kanaele.gas[i] > 95 ? F.gas : A.kanaele.gas[i] > 10 ? F.teilgas : F.rollen;
   // Grundbild einmal zeichnen und merken, Markierungen kommen später darüber.
   const grund = document.createElement('canvas'); grund.width = canvas.width; grund.height = canvas.height;
   const g = grund.getContext('2d'); g.scale(dpr, dpr); g.lineCap = 'round';
   if (verlust && verlust.d > 0) {
-    g.strokeStyle = 'rgba(255,159,28,.45)'; g.lineWidth = 16; g.beginPath();
+    g.strokeStyle = F.verlust; g.lineWidth = 18; g.beginPath();
     for (let i = verlust.s; i < Math.min(verlust.e + 1, n); i++) { const [x, y] = punkt(A, i); i === verlust.s ? g.moveTo(x, y) : g.lineTo(x, y); }
     g.stroke();
   }
   g.lineWidth = 4;
   for (let i = 0; i < n; i++) {
     const [x1, y1] = punkt(A, i), [x2, y2] = punkt(A, (i + 1) % n);
-    g.strokeStyle = farbe(i); g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+    g.strokeStyle = farbeBei(i); g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
   }
   // Start/Ziel markieren.
   const [sx, sy] = punkt(A, 0);
-  g.fillStyle = '#fff'; g.beginPath(); g.arc(sx, sy, 5, 0, 7); g.fill();
-  g.font = '12px system-ui'; g.fillText('Start/Ziel', sx + 8, sy - 8);
+  g.fillStyle = F.text; g.fillRect(sx - 5, sy - 5, 10, 10);
+  g.font = '600 12px "JetBrains Mono", monospace'; g.fillText('START/ZIEL', sx + 10, sy - 8);
   ctx.drawImage(grund, 0, 0, w, w);
   const ablesen = document.getElementById('ablesen');
   return {
     // Position beider Autos an derselben Stelle der Strecke zeigen und Werte ausgeben.
     markieren(i) {
       ctx.clearRect(0, 0, w, w); ctx.drawImage(grund, 0, 0, w, w);
-      for (const [R, f] of [[B, '#ff9f1c'], [A, '#3db8ff']]) {
+      for (const [R, f] of [[B, F.b], [A, F.a]]) {
         const [x, y] = punkt(R, i);
-        ctx.fillStyle = f; ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 7, 0, 7); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = f; ctx.strokeStyle = F.bg; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 7, 0, 7); ctx.fill(); ctx.stroke();
       }
       const kmStand = (i / n * A.laenge_m / 1000).toFixed(2);
       ablesen.innerHTML = `km ${kmStand} · <span class="a">A ${A.kanaele.speed[i].toFixed(0)} km/h, Gang ${A.kanaele.gang[i]}</span>` +
@@ -330,14 +375,14 @@ function karteVorbereiten(canvas, A, B, verlust) {
 async function ansichtBestenliste() {
   const liste = await api('/api/bestenliste');
   const strecken = [...new Set(liste.map(z => z.strecke))];
-  app.innerHTML = `<h1>Bestenliste</h1><p class="leise">Schnellste saubere Runde pro Strecke und Auto.</p>
-    ${strecken.map(st => {
+  app.innerHTML = `${seitenkopf('Zeitenliste', 'Bestenliste', 'Schnellste saubere Runde pro Strecke und Auto. Ein Klick vergleicht sie mit der Bestzeit.')}
+    ${strecken.map((st, nr) => {
       const z = liste.filter(x => x.strecke === st);
-      return `<h2>${esc(st)}</h2><div class="karte"><table>
-        <tr><th>#</th><th>Auto</th><th>Zeit</th><th>Abstand</th><th>saubere Runden</th><th></th></tr>
-        ${z.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.auto)}</td><td class="mono">${zeit(x.zeit)}</td>
-          <td class="mono">${i ? diff(x.zeit - z[0].zeit) : ''}</td><td>${x.runden}</td>
-          <td><a href="#/vergleich/${z[0].runde_id}/${x.runde_id}">${i ? 'mit der Bestzeit vergleichen' : 'ansehen'}</a></td></tr>`).join('')}
+      return `${abschnitt(String(nr + 1).padStart(2, '0'), esc(st))}<div class="karte"><table>
+        <tr><th>Pos</th><th>Auto</th><th>Zeit</th><th>Abstand</th><th>saubere Runden</th><th></th></tr>
+        ${z.map((x, i) => `<tr${i ? '' : ' class="beste"'}><td class="pos">P${i + 1}</td><td>${esc(x.auto)}</td><td class="mono">${zeit(x.zeit)}</td>
+          <td class="mono">${i ? diff(x.zeit - z[0].zeit) : ''}</td><td class="mono">${x.runden}</td>
+          <td><a href="#/vergleich/${z[0].runde_id}/${x.runde_id}">${i ? 'mit Bestzeit vergleichen →' : 'ansehen →'}</a></td></tr>`).join('')}
       </table></div>`;
     }).join('') || '<p class="leise">Noch keine sauberen Runden.</p>'}`;
 }
@@ -345,38 +390,52 @@ async function ansichtBestenliste() {
 // ---------- So funktioniert's ----------
 async function ansichtInfo() {
   const st = await api('/api/statistik');
+  // Stationen des Datenwegs. Die Marke unten zeigt, welches LF07-Thema dahintersteckt.
+  const schritte = [
+    ['iRacing', 'schreibt beim Fahren eine .ibt-Datei: 60 Messungen pro Sekunde, rund 290 Kanäle.', 'Sensorik'],
+    ['Upload', 'im Browser über das Netz. Flask nimmt die Datei an, nur nach Login.', 'Netzwerk'],
+    ['ibt_lesen.py', 'liest nur 15 Kanäle per numpy-memmap. 475 MB in Sekunden.', 'Verarbeitung'],
+    ['Runden', 'Ziellinie finden, jede Runde prüfen (Box, Ausritt, Lücke), auf 1000 Punkte umrechnen.', 'Auswertung'],
+    ['SQLite', 'speichert Runden und komprimierte Kurven. Die .ibt wird gelöscht.', 'Datenbank'],
+    ['Browser', 'holt JSON über die REST-API, zeichnet Karte (Canvas) und Kurven (uPlot).', 'Visualisierung'],
+  ];
   app.innerHTML = `
-    <h1>So funktioniert das Telemetrie-Labor</h1>
-    <p class="leise">Ein Rennauto im Simulator ist ein cyber-physisches System: 60 Mal pro Sekunde misst iRacing Tempo, Pedale, Lenkung, GPS-Position und Sprit. Das Labor macht aus diesen Rohdaten verständliche Bilder.</p>
-    <div class="kacheln" style="margin:14px 0">
+    ${seitenkopf('Technik', 'So funktioniert das Labor', 'Ein Rennauto im Simulator ist ein cyber-physisches System: 60 Mal pro Sekunde misst iRacing Tempo, Pedale, Lenkung, GPS-Position und Sprit. Das Labor macht aus diesen Rohdaten Bilder, die man sofort versteht.')}
+    <div class="kacheln" style="margin:18px 0">
       <div class="kachel"><small>Sitzungen</small><b>${st.sitzungen}</b></div>
       <div class="kachel"><small>Runden in der DB</small><b>${st.runden}</b></div>
       <div class="kachel"><small>gefahrene Strecke</small><b>${Math.round(st.km)} km</b></div>
     </div>
-    <h2>Der Weg der Daten</h2>
-    <div class="fluss">
-      <div class="schritt"><b>1. iRacing</b>schreibt beim Fahren eine .ibt-Datei: 60 Messungen pro Sekunde, rund 290 Kanäle.</div><div class="pfeil">→</div>
-      <div class="schritt"><b>2. Upload</b>im Browser. Flask nimmt die Datei an, nur nach Login.</div><div class="pfeil">→</div>
-      <div class="schritt"><b>3. ibt_lesen.py</b>liest nur 15 Kanäle per numpy-memmap. 475 MB in Sekunden.</div><div class="pfeil">→</div>
-      <div class="schritt"><b>4. Runden</b>Ziellinie finden, jede Runde prüfen (Box, Ausritt, Lücke) und auf 1000 Punkte umrechnen.</div><div class="pfeil">→</div>
-      <div class="schritt"><b>5. SQLite</b>speichert Runden und komprimierte Kurven. Die .ibt wird gelöscht.</div><div class="pfeil">→</div>
-      <div class="schritt"><b>6. Browser</b>holt JSON über die REST-API, zeichnet Karte (Canvas) und Kurven (uPlot).</div>
-    </div>
-    <h2>Aufbau einer .ibt-Datei</h2>
+    ${abschnitt('01', 'Der Weg der Daten')}
+    <div class="fluss">${schritte.map(([t, text, lf], i) => `<div class="schritt"><span class="nr">STATION ${i + 1}</span><b>${t}</b>${text}<br><span class="marke lf">${lf}</span></div>`).join('')}</div>
+    ${abschnitt('02', 'Aufbau einer .ibt-Datei')}
     <div class="bytes mono">
-      <div style="flex:1;background:#1d3b57">Kopf<br>112 B</div><div style="flex:1;background:#1d4a3a">Datei-Kopf<br>32 B</div>
-      <div style="flex:3;background:#3b2f57">Variablenliste<br>290 × 144 B</div><div style="flex:3;background:#57412a">Session-Infos (YAML)<br>Strecke, Auto, alle Fahrer</div>
-      <div style="flex:8;background:#2a3a4d">Messwerte: ein Datensatz alle 1/60 s, je ~1100 Byte</div>
+      <div style="flex:1;background:var(--byte1)">Kopf<br>112 B</div><div style="flex:1;background:var(--byte2)">Datei-Kopf<br>32 B</div>
+      <div style="flex:3;background:var(--byte3)">Variablenliste<br>290 × 144 B</div><div style="flex:3;background:var(--byte4)">Session-Infos (YAML)<br>Strecke, Auto, alle Fahrer</div>
+      <div style="flex:8;background:var(--byte5)">Messwerte: ein Datensatz alle 1/60 s, je ~1100 Byte</div>
     </div>
     <p class="leise">Die Variablenliste sagt für jeden Kanal, an welchem Byte im Datensatz er steht und welchen Typ er hat (float, double, int, bool). Damit baut numpy eine Maske über die ganze Datei und liest nur diese Spalten.</p>
-    <h2>Wie genau ist das?</h2>
+    ${abschnitt('03', 'Wie genau ist das?')}
     <p>Die Rundenzeit rechnet das Labor selbst: Zeitpunkt, an dem der Streckenanteil von 100 % auf 0 % springt, zwischen zwei Messungen interpoliert. Gegenprobe mit dem Wert, den iRacing selbst meldet: höchstens 1 ms Abweichung.</p>
-    <h2>Datenschutz und Sicherheit</h2>
+    ${abschnitt('04', 'Datenschutz und Sicherheit')}
     <p>Die Session-Infos jeder .ibt enthalten Namen und Kunden-IDs aller Fahrer der Session. Das Labor liest daraus nur Strecke, Länge, Art der Session und das eigene Auto. Die .ibt-Datei wird nach dem Auswerten gelöscht.</p>
     <p>Ansehen darf jeder im Netz, Hochladen und Löschen nur nach Login. Das Passwort steht nicht im Code: In <code>.env.password</code> liegt nur ein PBKDF2-Hash, die Datei hat Rechte 600 und ist per <code>.gitignore</code> und Commit-Wächter vom öffentlichen GitHub-Repo ausgeschlossen. Ohne gesetztes Passwort geht Hochladen nur direkt am Pi.</p>
-    <h2>Technik</h2>
-    <p class="leise">Raspberry Pi 400 · Python 3.9 · numpy · Flask · SQLite (WAL) · uPlot · Canvas · systemd-Dienst · erreichbar im WLAN und über Tailscale</p>`;
+    ${abschnitt('05', 'Betrieb')}
+    <p>Das Labor läuft als systemd-Dienst und startet nach einem Neustart des Pi von selbst. Die Statusleiste oben zeigt live, wie es dem Pi geht: CPU-Temperatur, Last, Arbeitsspeicher, Laufzeit, Größe der Datenbank und freier Platz auf der SD-Karte.</p>
+    <p class="leise mono">Raspberry Pi 400 · Python 3.9 · numpy · Flask · SQLite (WAL) · uPlot · Canvas · systemd · WLAN und Tailscale</p>`;
 }
+
+// ---------- Design-Vorschau: Thema umschalten, ohne die aktuelle Seite zu verlieren ----------
+document.querySelectorAll('#themawahl a').forEach(a => {
+  a.classList.toggle('aktiv', a.dataset.thema === document.documentElement.dataset.thema);
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    try { localStorage.setItem('thema', a.dataset.thema); } catch (err) {}
+    location.href = `?thema=${a.dataset.thema}${location.hash}`;
+  });
+});
 
 // ---------- Start ----------
 statusLaden().then(zeigen).catch(zeigen);
+statusleiste();
+setInterval(statusleiste, 10000);

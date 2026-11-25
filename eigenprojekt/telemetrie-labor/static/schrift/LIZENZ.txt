@@ -1,0 +1,11 @@
+Schriften im Telemetrie-Labor
+=============================
+
+Barlow, Barlow Condensed   (c) Jeremy Tribby, SIL Open Font License 1.1
+JetBrains Mono             (c) JetBrains s.r.o., SIL Open Font License 1.1
+
+Die Dateien stammen aus den npm-Paketen @fontsource/barlow, @fontsource/barlow-condensed
+und @fontsource/jetbrains-mono (Version 5.1.0), Zeichensatz "latin" (enthält ä, ö, ü, ß).
+Sie liegen lokal, damit das Labor ohne Internet läuft, zum Beispiel im Schul-WLAN.
+
+Lizenztext: https://openfontlicense.org/open-font-license-official-text/
