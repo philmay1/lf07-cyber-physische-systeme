@@ -32,12 +32,38 @@ Several clients publish to the Mosquitto broker on the Pi. The function `beim_em
 ```bash
 bash funk.sh einrichten    # once: packages, Mosquitto listeners, desktop icon
 bash funk.sh neu           # start logger, bridge and board with an empty table
-python sender.py --host <pi-ip> --anzahl 20    # from the notebook (pip install paho-mqtt)
+python sender.py --anzahl 20    # from the notebook (pip install paho-mqtt python-dotenv, .env files next to it)
 sqlite3 mqtt.db "SELECT id, datetime(zeit,'unixepoch','localtime'), topic, sender, wert FROM events ORDER BY id DESC LIMIT 20;"
 ```
 
 Tests: `python3 test_funk.py` (19 checks, no broker needed). Tested live on the Pi with Mosquitto 2.0.11 and with the phone page in Edge.
 
+## Hardening with .env, .env.password and .gitignore (day 8)
+
+Since day 8 every program logs in, and every role may only do what it needs (Mosquitto ACL).
+Settings live in `.env` (host, ports), passwords in a separate `.env.password` (mode 600).
+Both are blocked by `.gitignore` (`.env`, `*.env`, `.env.*`, except `.env.example`); only [`.env.example`](.env.example) is in the repo.
+The old ignore rules `.env` and `*.env` did not cover `.env.password`; the new line `.env.*` closes that gap.
+
+| Role | reads | publishes |
+|---|---|---|
+| `logger` | `lf07/#` | nothing |
+| `board` | phones, sender, keypad, answers, no PINs | nothing |
+| `bruecke` | `lf07/zutritt/pin` | `lf07/zutritt/antwort/#` |
+| `keypad` | nothing | `lf07/keypad/versuch` |
+| `sender` | nothing | `lf07/sender/#` |
+| `handy` | answers | `lf07/handy/#`, `lf07/zutritt/pin` |
+
+Board and phone run in the browser, so their passwords are visible to visitors; they get the weakest roles.
+A pre-commit hook in [`../../.githooks/`](../../.githooks/geheimnis_waechter.py) blocks commits that contain env files or any real password value.
+
+```bash
+bash funk.sh schluessel   # create .env + .env.password, enable login + ACL
+bash funk.sh waechter     # enable the commit guard
+bash funk.sh angriff      # attack test: 12 of 12 blocked on the Pi
+bash funk.sh notebook     # notebook access with the sender password only
+```
+
 ## Limits
 
-The broker accepts anonymous, unencrypted connections, which is fine for a classroom demo only. PINs from phones travel in plain text over Wi-Fi; the database stores only `PIN ****`. Some school Wi-Fi networks isolate clients, so phones may not reach the Pi.
+Since day 8 the broker requires a login, but traffic is still unencrypted; TLS would be the next step. PINs from phones travel in plain text over Wi-Fi; the database stores only `PIN ****`. Some school Wi-Fi networks isolate clients, so phones may not reach the Pi.

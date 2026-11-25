@@ -19,8 +19,8 @@ MQTT arbeitet nach dem Prinzip Publish/Subscribe. Ein Sender (Publisher) schickt
 ```mermaid
 flowchart LR
     K["Pi-Keypad<br/>zutritt.py"] -->|lf07/keypad/versuch| B(("Mosquitto<br/>:1883 / :9001"))
-    S["Pi-Sensor<br/>CPU-Temperatur"] -->|lf07/pi/cpu_temperatur| B
-    N["Notebook<br/>sender.py"] -->|lf07/&lt;name&gt;/temperatur| B
+    S["Pi-Sensor<br/>CPU-Temperatur"] -->|lf07/sender/pi/cpu_temperatur| B
+    N["Notebook<br/>sender.py"] -->|lf07/sender/&lt;name&gt;/temperatur| B
     H["Handys der Klasse<br/>handy.html"] -->|lf07/handy/&lt;name&gt;/knopf| B
     B -->|"Abo lf07/#"| L["mqtt_logger.py<br/>beim_empfang()"]
     L --> D[("mqtt.db<br/>Tabelle events")]
@@ -87,11 +87,11 @@ Vor der Vorführung:
 ## Auf dem Notebook
 
 ```powershell
-pip install paho-mqtt
-python sender.py --host <IP-des-Pi> --anzahl 20
+pip install paho-mqtt python-dotenv
+python sender.py --anzahl 20
 ```
 
-Die IP des Pi steht auf dem Board unter dem QR-Code. Im Heimnetz klappt oft auch `--host raspberrypi.local`.
+Seit Tag 8 braucht der Sender einen Login. Auf dem Pi legt `bash funk.sh notebook` den Ordner `~/funk-notebook` mit `.env` (Adresse des Pi) und `.env.password` (nur das Sender-Passwort) an. Beide Dateien kommen per LocalSend neben `sender.py`, nie über GitHub.
 
 ## Dateien
 
@@ -103,22 +103,88 @@ Die IP des Pi steht auf dem Board unter dem QR-Code. Im Heimnetz klappt oft auch
 | [funk_web.py](funk_web.py) | Flask auf Port 5050: liefert Board, Handyseite, QR-Code, Daten |
 | [board.html](board.html) / [handy.html](handy.html) | Live-Board und Handyseite, beide selbst MQTT-Clients über WebSocket |
 | [funk_db.py](funk_db.py) | gemeinsame Datenbank-Funktionen und MQTT-Client für paho 1.x und 2.x |
-| [funk.sh](funk.sh) | einrichten, starten, stoppen, Status |
-| [test_funk.py](test_funk.py) | 19 Prüfungen ohne Broker |
+| [funk.sh](funk.sh) | einrichten, starten, stoppen, Status, Schlüssel, Angriffstest |
+| [funk_sicherheit.py](funk_sicherheit.py) | Rollen, Zufallspasswörter, Mosquitto-Login und ACL (Tag 8) |
+| [angriff.py](angriff.py) | Angriffstest gegen Broker und Repo (Tag 8) |
+| [.env.example](.env.example) | Vorlage für `.env` und `.env.password` |
+| [test_funk.py](test_funk.py) | 30 Prüfungen ohne Broker |
 | static/mqtt.min.js | MQTT.js 4.3.7 für den Browser, liegt lokal, damit kein Internet nötig ist |
 
 Außerdem meldet [`../tag05-zutrittskontrolle/zutritt.py`](../tag05-zutrittskontrolle/zutritt.py) jetzt jeden PIN-Versuch als `ok`, `falsch` oder `gesperrt` auf `lf07/keypad/versuch`. Die PIN selbst wird nie gesendet. Fehlt paho-mqtt oder läuft kein Broker, arbeitet die Zutrittskontrolle wie vorher.
 
 ![Handyseite](bilder/handy.jpg)
 
+## Absicherung mit .env, .env.password und .gitignore (Tag 8)
+
+An Tag 5 nahm der Broker jeden an: Wer im WLAN war, konnte alles mitlesen und unter jedem Namen senden. Seit Tag 8 braucht jedes Programm einen Login, und jede Rolle darf nur das, was sie für ihre Aufgabe braucht.
+
+### Drei Dateien, drei Aufgaben
+
+| Datei | Inhalt | Im Git? |
+|---|---|:-:|
+| `.env` | Einstellungen dieses Rechners: `MQTT_HOST`, `MQTT_PORT`, `MQTT_WS_PORT`, `FUNK_PORT` | nein |
+| `.env.password` | nur die Passwörter, eine Zeile pro Rolle (`MQTT_PASS_LOGGER=...`), Rechte 600 | nein |
+| [`.env.example`](.env.example) | dieselben Namen mit Platzhaltern, als Anleitung für andere | ja |
+| [`../../.gitignore`](../../.gitignore) | sperrt `.env`, `*.env` und `.env.*`, lässt nur `.env.example` durch | ja |
+
+Einstellungen und Passwörter liegen getrennt, weil man sie verschieden behandelt. Die `.env` darf man jemandem zeigen, wenn eine Verbindung nicht klappt. Die `.env.password` verlässt den Rechner nie, und das Notebook bekommt davon nur eine einzige Zeile.
+
+Vor Tag 8 stand in der `.gitignore` schon `.env` und `*.env`. Eine Datei `.env.password` hätte das trotzdem nicht gesperrt, denn ihr Name endet auf `.password`. Erst die Zeile `.env.*` schließt diese Lücke. Prüfen lässt sich das mit `git check-ignore -v .env.password`.
+
+### Wer darf was (ACL)
+
+Die Rollen stehen an einer Stelle in [`funk_sicherheit.py`](funk_sicherheit.py). Daraus entstehen die Passwortdatei und die Rechte-Datei für Mosquitto.
+
+| Rolle | Wer | darf lesen | darf senden |
+|---|---|---|---|
+| `logger` | `mqtt_logger.py` | `lf07/#` | nichts |
+| `board` | Live-Board | Handy, Sender, Keypad, Antworten. **Keine PINs** | nichts |
+| `bruecke` | `zutritt_bruecke.py` | `lf07/zutritt/pin` | `lf07/zutritt/antwort/#` |
+| `keypad` | `zutritt.py` | nichts | `lf07/keypad/versuch` |
+| `sender` | `sender.py` (Pi, Notebook) | nichts | `lf07/sender/#` |
+| `handy` | Handyseite | Antworten | `lf07/handy/#`, `lf07/zutritt/pin` |
+
+Board und Handy laufen im Browser. Alles, was dort ankommt, kann jeder Besucher im Quelltext sehen, also auch ihr Passwort. Deshalb bekommen genau diese beiden die schwächsten Rollen. Wer das Handy-Passwort abgreift, kann Knöpfe drücken und PINs raten (nach 3 Fehlern sperrt SENTINEL), aber keine Keypad-Meldung fälschen und nichts mitlesen.
+
+### Das Passwort steht nie im Code
+
+`funk_db.py`, `sender.py` und `zutritt.py` laden `.env` und `.env.password` mit python-dotenv und lesen dann `os.environ`. Fehlt ein Passwort, verbinden sie sich ohne Login. Ein abgesicherter Broker lehnt das ab, und das Programm sagt, was fehlt.
+
+### Commit-Wächter
+
+[`../../.githooks/geheimnis_waechter.py`](../../.githooks/geheimnis_waechter.py) läuft vor jedem Commit. Er stoppt den Commit, wenn eine Datei wie `.env` oder `.env.password` dabei ist, auch mit `git add -f`. Außerdem sucht er jeden Passwort-Wert aus den echten Geheimnis-Dateien in allen vorgemerkten Dateien. So fällt es auf, wenn jemand ein Passwort in den Code kopiert. Eingeschaltet wird er einmal pro Klon mit `git config core.hooksPath .githooks` (macht `bash funk.sh waechter`).
+
+### Einrichten und vorführen
+
+```bash
+bash funk.sh schluessel    # .env + .env.password (Zufallspasswörter) anlegen, Broker mit Login + ACL starten
+bash funk.sh waechter      # Commit-Wächter einschalten
+bash funk.sh neu           # Logger, Brücke, Board starten
+bash funk.sh angriff       # Angriffstest
+bash funk.sh notebook      # Zugang fürs Notebook nach ~/funk-notebook (nur Sender-Passwort)
+```
+
+Der Angriffstest probiert zwölf Angriffe gegen den echten Broker und das Repo aus:
+
+- anonym, mit falschem Passwort und mit `admin/admin` verbinden
+- als Handy eine Keypad-Meldung fälschen, als Board senden, als Sender eine SENTINEL-Antwort fälschen
+- als Board PINs mitlesen (Mosquitto bestätigt das Abo, liefert aber keine einzige Nachricht)
+- `.env` und `.env.password` sind gesperrt, keine echte `.env` im Repo, `.env.password` hat Rechte 600
+- ein Commit mit einem echten Passwort im Code
+
+Vorher schickt er als Gegenprobe einen erlaubten Handy-Knopf, damit klar ist, dass der Broker überhaupt Nachrichten durchlässt. Ergebnis auf dem Pi: 12 von 12 abgewehrt.
+
+Notfall in einer Vorführung: `bash funk.sh offen` stellt den Broker zurück auf den Stand von Tag 5.
+
 ## Getestet
 
-- `python3 test_funk.py`: 19 von 19 Prüfungen bestanden, `test_zutritt.py` weiter grün.
+- `python3 test_funk.py`: 30 von 30 Prüfungen bestanden, `test_zutritt.py` weiter grün.
+- Tag 8 auf dem Pi: `bash funk.sh angriff` wehrt 12 von 12 Angriffen ab. Notebook-Sender mit Login sendet, ohne Login lehnt der Broker ab (Code 135). Board und Handy verbinden sich in Edge mit ihren Rollen.
 - Live auf dem Pi mit Mosquitto 2.0.11: 20 Notebook-Werte, 3 CPU-Temperaturen, 3 falsche PINs mit Sperre und eine Keypad-Meldung, zusammen 30 Zeilen in `mqtt.db`.
 - Handyseite in Edge mit Handygröße über WLAN: verbindet, sendet, bekommt die Sperr-Antwort.
 
 ## Grenzen
 
-- Der Broker nimmt Verbindungen ohne Passwort und ohne Verschlüsselung an. Jeder im WLAN kann mitlesen und senden. Für die Vorführung im Schulnetz ist das in Ordnung. Im Betrieb gehören Benutzer, Passwörter (`password_file`) und TLS dazu.
+- Seit Tag 8 gibt es Login und Rechte, aber noch keine Verschlüsselung. Passwörter und Nachrichten gehen im Klartext durchs WLAN und lassen sich mit Wireshark mitlesen. Der nächste Schritt wäre TLS (Port 8883, für Browser `wss://`).
 - Eine PIN vom Handy geht im Klartext über das WLAN. Die Datenbank speichert nur `PIN ****`, das Board zeigt sie nie. Deshalb dort nie die echte Admin-PIN eintippen.
 - Manche Schul-WLANs trennen Geräte voneinander (Client-Isolation). Dann erreichen die Handys den Pi nicht. Notebook und Pi-Sender funktionieren trotzdem, wenn das Notebook per LAN oder Tailscale dran ist.

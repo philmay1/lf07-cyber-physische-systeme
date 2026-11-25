@@ -24,7 +24,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/badges/progress-de.svg" alt="4 von 14 erledigt (Projekte und Übungen)">
+  <img src="docs/badges/progress-de.svg" alt="5 von 15 erledigt (Projekte und Übungen)">
 </p>
 
 <p align="center">
@@ -107,6 +107,7 @@ Aufgaben aus dem Unterricht und dem Raspberry-Pi-Handbuch. Sie bauen die Technik
 | 04 | [Ampel dimmen](uebungen/tag04-ampel-dimmen/) | Lässt die Ampel in drei Stufen leuchten: rot 100 %, gelb 60 %, grün 20 % | PWM, Tastgrad, PWMLED | ✅ |
 | 05 | [Zutrittskontrolle](uebungen/tag05-zutrittskontrolle/) | PIN am 4x4-Keypad, Sperre nach 3 Fehlversuchen, Protokoll in SQLite, Live-Dashboard | Matrix-Keypad, SQLite, Hash mit Salt, Flask | 🟡 |
 | 05 | [MQTT-Funk](uebungen/tag05-mqtt/) | Keypad, Handys und Notebook senden Events an Mosquitto, ein Subscriber schreibt Wert und Zeit in SQLite | MQTT, Publish/Subscribe, WebSocket, SQLite | ✅ |
+| 08 | [MQTT-Funk absichern](uebungen/tag05-mqtt/#absicherung-mit-env-envpassword-und-gitignore-tag-8) | Login und Rechte pro Rolle für Mosquitto, Einstellungen in `.env`, Passwörter in `.env.password`, `.gitignore` und Commit-Wächter halten sie aus GitHub heraus, Angriffstest | .env, ACL, .gitignore, Git-Hook | ✅ |
 
 Die Zutrittskontrolle steht auf 🟡, weil die Testtabelle am Pi noch nicht vollständig abgehakt ist. Sie ist die Grundlage für Projekt 05 und 06.
 

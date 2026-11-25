@@ -24,7 +24,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/badges/progress-en.svg" alt="4 of 14 done (projects and exercises)">
+  <img src="docs/badges/progress-en.svg" alt="5 of 15 done (projects and exercises)">
 </p>
 
 <p align="center">
@@ -107,6 +107,7 @@ Tasks from class and the Raspberry Pi Beginner's Guide. They build the technolog
 | 04 | [Dimming the traffic light](uebungen/tag04-ampel-dimmen/) | Lights the traffic light at three levels: red 100 %, yellow 60 %, green 20 % | PWM, duty cycle, PWMLED | ✅ |
 | 05 | [Access control](uebungen/tag05-zutrittskontrolle/) | PIN on a 4x4 keypad, lockout after 3 failures, log in SQLite, live dashboard | Matrix keypad, SQLite, salted hash, Flask | 🟡 |
 | 05 | [MQTT radio](uebungen/tag05-mqtt/) | Keypad, phones and notebook send events to Mosquitto, a subscriber stores value and time in SQLite | MQTT, publish/subscribe, WebSocket, SQLite | ✅ |
+| 08 | [Hardening the MQTT radio](uebungen/tag05-mqtt/#hardening-with-env-envpassword-and-gitignore-day-8) | Login and per-role rights for Mosquitto, settings in `.env`, passwords in `.env.password`, `.gitignore` and a commit guard keep them off GitHub, attack test | .env, ACL, .gitignore, git hook | ✅ |
 
 Access control is 🟡 because its test table on the Pi is not fully ticked yet. It is the basis for projects 05 and 06.
 
