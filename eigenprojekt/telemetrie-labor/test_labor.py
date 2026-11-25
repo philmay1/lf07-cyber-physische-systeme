@@ -156,5 +156,6 @@ pruefe(web.post("/api/login", json={"passwort": "richtig-geheim"}).get_json()["o
 pruefe(web.delete(f"/api/sitzung/{sid}").get_json()["ok"], "nach Login: Löschen erlaubt")
 pruefe(len(web.get("/api/sitzungen").get_json()) == 1, "Sitzung samt Runden gelöscht")
 pruefe(b"Telemetrie-Labor" in web.get("/").data and web.get("/static/uPlot.iife.min.js").status_code == 200, "Oberfläche und uPlot werden ausgeliefert")
+pruefe(web.get("/").headers.get("Cache-Control") == "no-cache", "Startseite ohne Zwischenspeicher (nach Updates sofort neu)")
 
 print(f"\nAlle {ok} Prüfungen bestanden.")

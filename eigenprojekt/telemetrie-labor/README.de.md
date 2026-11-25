@@ -92,7 +92,7 @@ Dateien direkt am Pi einlesen, ohne Browser: `python3 labor.py import datei.ibt`
 
 ## Getestet
 
-- [`test_labor.py`](test_labor.py) baut selbst eine `.ibt` im echten Format: drei Runden auf einer Kreisbahn, eine davon mit Boxengasse, dazu zwei fremde Fahrer in den Session-Infos. 27 Prüfungen, darunter Rundenzeit auf 2 ms genau, Datenschutz, beide Upload-Wege, Login und Löschen. Ergebnis: auf dem Pi 27 von 27.
+- [`test_labor.py`](test_labor.py) baut selbst eine `.ibt` im echten Format: drei Runden auf einer Kreisbahn, eine davon mit Boxengasse, dazu zwei fremde Fahrer in den Session-Infos. 28 Prüfungen, darunter Rundenzeit auf 2 ms genau, Datenschutz, beide Upload-Wege, Login und Löschen. Ergebnis: auf dem Pi 28 von 28.
 - Mit 11 echten Dateien (Monza GT4, Winton GT3 mit BMW und Mercedes): 9 Sitzungen, 110 Runden, 565 km. Zwei Dateien ohne volle Runde werden mit Meldung übersprungen.
 - Upload auf dem Pi, gemessen mit einer 28-MB-Datei: 2,1 s als Datenstrom, davon 0,9 s Auswertung. Als Formular dauert es 4,6 s, deshalb schickt der Browser einen Datenstrom.
 

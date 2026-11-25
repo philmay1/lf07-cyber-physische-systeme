@@ -117,7 +117,12 @@ def verboten():
 # Die Oberfläche: eine einzige Seite, der Rest kommt per JavaScript.
 @app.route("/")
 def start():
-    return send_from_directory(HIER / "static", "index.html")
+    antwort = send_from_directory(HIER / "static", "index.html")
+    # no-cache: Der Browser muss vor jeder Nutzung kurz nachfragen, ob sich die Seite geändert hat.
+    # Ohne das hält Flask sie 12 Stunden im Zwischenspeicher, und nach einem Update sähe man das alte Design.
+    # CSS und JS hängen mit ?v=... an index.html, deshalb reicht es, nur diese eine Datei frisch zu halten.
+    antwort.headers["Cache-Control"] = "no-cache"
+    return antwort
 
 
 # Login-Zustand für die Oberfläche.

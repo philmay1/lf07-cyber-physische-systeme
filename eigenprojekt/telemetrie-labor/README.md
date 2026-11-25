@@ -42,4 +42,4 @@ python3 labor.py passwort          # set your own password
 sudo systemctl restart telemetrie-labor
 ```
 
-Open `http://<pi-ip>:5080`. Tests: `python3 test_labor.py` builds its own `.ibt` in the real format and runs 27 checks (27 of 27 on the Pi). With 11 real files: 9 sessions, 110 laps, 565 km.
+Open `http://<pi-ip>:5080`. Tests: `python3 test_labor.py` builds its own `.ibt` in the real format and runs 28 checks (28 of 28 on the Pi). With 11 real files: 9 sessions, 110 laps, 565 km.
