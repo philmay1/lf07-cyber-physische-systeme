@@ -1,20 +1,32 @@
-/* Telemetrie-Labor: Aussehen der Oberfläche.
+/* =====================================================================================
+ * Telemetrie-Labor: style.css, das Aussehen der Oberfläche
+ * =====================================================================================
+ * Thema "Boxenmauer": dunkel wie die Monitore, an denen Renningenieure an der Boxenmauer
+ * sitzen. Fast schwarz, harte Kanten, Signalrot als Akzent, Zahlen in einer Schrift mit
+ * gleich breiten Ziffern.
  *
- * Aufbau dieser Datei:
- *   1. Schriften (liegen lokal in static/schrift, kein Internet nötig)
- *   2. Farben als Variablen, zwei Themen:
- *        data-thema="boxenmauer"   dunkel, wie die Monitore an der Boxenmauer
- *        data-thema="ingenieur"    hell, wie ein Datenbericht vom Renningenieur
- *      Welches Thema gilt, steht am <html>-Tag (siehe index.html).
- *      JavaScript liest dieselben Variablen für Karte und Diagramme (Funktion farbe() in app.js).
- *   3. Grundgerüst, Kopfzeile, Statusleiste
- *   4. Bausteine: Kacheln, Tabellen, Knöpfe, Upload
- *   5. Seiten: Sitzung (Säulen), Vergleich (Karte + Diagramme), Info
- */
+ * So ist die Datei aufgebaut (von oben nach unten):
+ *   1. Schriften       liegen lokal in static/schrift, das Labor braucht kein Internet
+ *   2. Farben          alle Farben als Variablen (--name). Ändert man hier eine Farbe,
+ *                      ändert sie sich überall, auch in Karte und Diagrammen: app.js liest
+ *                      dieselben Variablen mit der Funktion farbe().
+ *   3. Grundgerüst     Seite, Kopfzeile, Statusleiste, Überschriften
+ *   4. Bausteine       Kacheln, Tabellen, Knöpfe, Upload-Feld
+ *   5. Seiten          Sitzung (Säulen), Vergleich (Karte + Diagramme), Info
+ *   6. Handy           schmale Bildschirme
+ *
+ * CSS in einem Satz: Links steht, WAS gestaltet wird (ein "Selektor", z. B. .kachel für
+ * alle Elemente mit class="kachel"), in den geschweiften Klammern steht, WIE.
+ * ===================================================================================== */
+
 
 /* ---------- 1. Schriften ---------- */
-/* Barlow: Fließtext. Barlow Condensed: Überschriften (schmal, wirkt wie Rennsport-Grafik).
-   JetBrains Mono: alle Zahlen, damit Ziffern gleich breit sind und Rundenzeiten untereinander stehen. */
+/* @font-face meldet eine Schriftdatei beim Browser an. Drei Familien:
+     Barlow            Fließtext, gut lesbar
+     Barlow Condensed  Überschriften, schmal und kräftig wie Rennsport-Grafiken
+     JetBrains Mono    alle Zahlen. Jede Ziffer ist gleich breit, deshalb stehen
+                       Rundenzeiten wie 1:18.939 und 1:19.030 sauber untereinander.
+   font-display: swap heißt: erst mit Ersatzschrift anzeigen, dann tauschen. Nie leere Seite. */
 @font-face { font-family: "Barlow"; font-weight: 400; font-display: swap; src: url(schrift/barlow-latin-400-normal.woff2) format("woff2"); }
 @font-face { font-family: "Barlow"; font-weight: 600; font-display: swap; src: url(schrift/barlow-latin-600-normal.woff2) format("woff2"); }
 @font-face { font-family: "Barlow Condensed"; font-weight: 600; font-display: swap; src: url(schrift/barlow-condensed-latin-600-normal.woff2) format("woff2"); }
@@ -22,83 +34,85 @@
 @font-face { font-family: "JetBrains Mono"; font-weight: 400; font-display: swap; src: url(schrift/jetbrains-mono-latin-400-normal.woff2) format("woff2"); }
 @font-face { font-family: "JetBrains Mono"; font-weight: 600; font-display: swap; src: url(schrift/jetbrains-mono-latin-600-normal.woff2) format("woff2"); }
 
+
 /* ---------- 2. Farben ---------- */
-/* Bedeutung der Farben ist in beiden Themen gleich, nur der Farbton ändert sich:
-   --a / --b       Runde A und Runde B im Vergleich
-   --lila          schnellste Runde (so zeigt es auch das TV-Timing im Motorsport)
-   --gut/--schlecht schneller / langsamer
-   --gas, --bremse, --teilgas, --rollen   Einfärbung der Streckenkarte */
+/* :root ist das oberste Element der Seite. Was hier steht, gilt überall.
+   Bedeutung der wichtigsten Farben:
+     --a / --b             Runde A (Cyan) und Runde B (Bernstein) im Vergleich
+     --lila                schnellste Runde. So zeigt es auch das TV-Timing im Motorsport,
+                           deshalb versteht das Publikum es ohne Erklärung.
+     --gut / --schlecht    schneller (grün) / langsamer (rot)
+     --gas, --bremse, --teilgas, --rollen   Einfärbung der Streckenkarte
+     --akzent              Signalrot für Linien, Knöpfe und Kapitelnummern */
 :root {
   --text-schrift: "Barlow", "Segoe UI", system-ui, sans-serif;
   --titel-schrift: "Barlow Condensed", "Arial Narrow", sans-serif;
   --zahl-schrift: "JetBrains Mono", Consolas, ui-monospace, monospace;
-}
 
-/* Thema A: Boxenmauer (dunkel). Fast schwarz, harte Kanten, Signalrot als Akzent. */
-:root, html[data-thema="boxenmauer"] {
-  --bg: #0b0b0d; --flaeche: #131316; --flaeche2: #1b1b1f; --linie: #2a2a30; --linie-fein: #1f1f24;
-  --text: #ececee; --leise: #8b8b94; --akzent: #ff3b1f; --akzent-text: #0b0b0d;
-  --a: #22d3ee; --b: #f5a524; --lila: #b45cff; --gut: #19d36f; --schlecht: #ff3b30; --gelb: #ffd60a;
+  --bg: #0b0b0d;          /* Seitenhintergrund, fast schwarz */
+  --flaeche: #131316;     /* Karten und Kacheln, eine Spur heller */
+  --flaeche2: #1b1b1f;    /* Zeile unter der Maus */
+  --linie: #2a2a30;       /* kräftige Trennlinie */
+  --linie-fein: #1f1f24;  /* feine Trennlinie */
+  --text: #ececee; --leise: #8b8b94;
+  --akzent: #ff3b1f; --akzent-text: #0b0b0d;
+  --a: #22d3ee; --b: #f5a524; --lila: #b45cff; --gut: #19d36f; --schlecht: #ff3b30;
   --gas: #19d36f; --bremse: #ff3b30; --teilgas: #ffd60a; --rollen: #4a4a52;
-  --verlust: rgba(180, 92, 255, .45); --gitter: #1f1f24; --achse: #8b8b94;
-  --kopf-bg: #0b0b0d; --kopf-text: #ececee; --kopf-linie: var(--akzent);
-  --byte1: #16384a; --byte2: #183d2b; --byte3: #2f2350; --byte4: #4a3415; --byte5: #22252c;
-  --raster: rgba(255, 255, 255, .025);
+  --verlust: rgba(180, 92, 255, .45);   /* halbdurchsichtig: Abschnitt mit dem größten Zeitverlust */
+  --gitter: #1f1f24; --achse: #8b8b94;  /* Raster und Beschriftung der Diagramme */
+  --byte1: #16384a; --byte2: #183d2b; --byte3: #2f2350; --byte4: #4a3415; --byte5: #22252c;  /* Info-Seite: Teile der .ibt */
+  --raster: rgba(255, 255, 255, .025);  /* Messraster im Hintergrund, kaum sichtbar */
 }
 
-/* Thema B: Renningenieur (hell). Papierweiß, schwarze Linien, Rot als Akzent. Am Beamer am besten lesbar. */
-html[data-thema="ingenieur"] {
-  --bg: #f2f1ec; --flaeche: #ffffff; --flaeche2: #f6f5f1; --linie: #16161a; --linie-fein: #dcdad3;
-  --text: #16161a; --leise: #64625c; --akzent: #d7261e; --akzent-text: #ffffff;
-  --a: #1d4ed8; --b: #ea580c; --lila: #7c3aed; --gut: #0f8a4c; --schlecht: #d7261e; --gelb: #c99700;
-  --gas: #0f8a4c; --bremse: #d7261e; --teilgas: #e0a800; --rollen: #b9b6ad;
-  --verlust: rgba(124, 58, 237, .30); --gitter: #e7e5df; --achse: #64625c;
-  --kopf-bg: #ffffff; --kopf-text: #16161a; --kopf-linie: #16161a;
-  --byte1: #cfe0f7; --byte2: #cdebd9; --byte3: #e3d7fb; --byte4: #fbe2c8; --byte5: #e7e5df;
-  --raster: transparent;
-}
 
 /* ---------- 3. Grundgerüst ---------- */
+/* box-sizing: border-box = Rahmen und Innenabstand zählen zur Breite. Rechnet sich leichter. */
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 var(--text-schrift); }
-/* Feines Messraster im Hintergrund (nur im dunklen Thema sichtbar), wie auf einem Datenmonitor. */
+/* Messraster: zwei Verläufe, die alle 32 Pixel eine 1 Pixel dünne Linie zeichnen (waagerecht und senkrecht). */
 body { background-image: linear-gradient(var(--raster) 1px, transparent 1px), linear-gradient(90deg, var(--raster) 1px, transparent 1px);
        background-size: 32px 32px; }
 a { color: var(--a); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-/* Kopfzeile: Name links, Menü rechts, unten eine Linie in der Akzentfarbe. */
-.kopf { display: flex; align-items: center; gap: 20px; padding: 0 24px; height: 60px; background: var(--kopf-bg); color: var(--kopf-text);
-        border-bottom: 3px solid var(--kopf-linie); position: sticky; top: 0; z-index: 5; }
-.logo { display: flex; align-items: center; gap: 12px; color: var(--kopf-text); }
+/* Kopfzeile: Logo links, Menü rechts, unten eine rote Linie.
+   position: sticky hält sie beim Scrollen oben fest. */
+.kopf { display: flex; align-items: center; gap: 20px; padding: 0 24px; height: 60px; background: var(--bg); color: var(--text);
+        border-bottom: 3px solid var(--akzent); position: sticky; top: 0; z-index: 5; }
+.logo { display: flex; align-items: center; gap: 12px; color: var(--text); }
 .logo:hover { text-decoration: none; }
-/* Kleine Zielflagge als Logo: ein Schachbrett aus einem einzigen CSS-Verlauf. */
+/* Zielflagge als Logo, ganz ohne Bild: ein "konischer Verlauf", der sich als Schachbrett wiederholt. */
 .flagge { width: 26px; height: 26px; flex: none;
-          background: repeating-conic-gradient(var(--kopf-text) 0 25%, transparent 0 50%) 0 0 / 13px 13px; border: 1px solid var(--kopf-text); }
+          background: repeating-conic-gradient(var(--text) 0 25%, transparent 0 50%) 0 0 / 13px 13px; border: 1px solid var(--text); }
 .logo b { font: 700 22px/1 var(--titel-schrift); letter-spacing: .06em; text-transform: uppercase; display: block; }
 .logo small { display: block; font-size: 12px; opacity: .65; letter-spacing: .04em; margin-top: 3px; }
+/* Menü: margin-left: auto schiebt es ganz nach rechts. */
 .menue { margin-left: auto; display: flex; height: 100%; }
-.menue a { display: flex; align-items: center; padding: 0 16px; color: var(--kopf-text); font: 600 16px var(--titel-schrift);
+.menue a { display: flex; align-items: center; padding: 0 16px; color: var(--text); font: 600 16px var(--titel-schrift);
            letter-spacing: .08em; text-transform: uppercase; opacity: .7; border-bottom: 3px solid transparent; margin-bottom: -3px; }
 .menue a:hover { opacity: 1; text-decoration: none; }
-/* Aktiver Menüpunkt: volle Deckkraft und Akzentlinie darunter. */
-.menue a.aktiv { opacity: 1; border-bottom-color: var(--kopf-text); }
+/* Aktiver Menüpunkt (app.js setzt class="aktiv"): volle Deckkraft und weiße Linie darunter. */
+.menue a.aktiv { opacity: 1; border-bottom-color: var(--text); }
 .kopf button { margin-left: 8px; }
 
-/* Statusleiste: Werte vom Pi selbst (Temperatur, Speicher, Laufzeit). Der Admin-Blick auf den Server. */
+/* Statusleiste: Live-Werte vom Pi (app.js holt sie alle 10 s von /api/system).
+   Das ist der Blick des Admins: Läuft der Server, wie warm ist er, wie voll ist die SD-Karte? */
 .status { display: flex; gap: 22px; padding: 6px 24px; font: 12px var(--zahl-schrift); color: var(--leise);
           border-bottom: 1px solid var(--linie-fein); background: var(--flaeche); flex-wrap: wrap; text-transform: uppercase; }
 .status b { color: var(--text); font-weight: 600; }
+/* Grüner Punkt vor "Pi online", der langsam pulsiert (Animation "puls"). */
 .status .an::before { content: ""; display: inline-block; width: 8px; height: 8px; background: var(--gut); margin-right: 7px;
                       box-shadow: 0 0 8px var(--gut); vertical-align: 1px; animation: puls 2s infinite; }
 @keyframes puls { 50% { opacity: .35; } }
 
+/* Inhalt: höchstens 1520 Pixel breit und mittig, damit Zeilen auf großen Monitoren nicht endlos werden. */
 main { padding: 26px 24px 70px; max-width: 1520px; margin: 0 auto; }
-/* Seitenkopf: kleine Zeile darüber (Rubrik), großer Titel, Unterzeile. */
+/* Seitenkopf: rote Rubrik darüber, großer Titel in Großbuchstaben. */
 .rubrik { font: 600 13px var(--zahl-schrift); color: var(--akzent); letter-spacing: .14em; text-transform: uppercase; margin: 0 0 2px; }
-h1 { font: 700 40px/1.05 var(--titel-schrift); text-transform: uppercase; letter-spacing: .01em; margin: 0 0 6px; }
+h1 { font: 700 40px/1.05 var(--titel-schrift); text-transform: uppercase; letter-spacing: .01em; margin: 0 0 6px;
+     text-shadow: 0 0 24px rgba(255, 59, 31, .18); }
 h1 .leise { font-weight: 600; }
-/* Zwischenüberschrift mit Nummer, wie Kapitel in einem technischen Bericht. */
+/* Zwischenüberschrift mit roter Kapitelnummer, wie in einem technischen Bericht. */
 h2 { font: 700 20px var(--titel-schrift); text-transform: uppercase; letter-spacing: .06em; margin: 34px 0 12px;
      display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--linie); padding-bottom: 6px; }
 h2 .nr { font: 600 13px var(--zahl-schrift); color: var(--akzent); }
@@ -108,31 +122,34 @@ h3 { font: 700 17px var(--titel-schrift); text-transform: uppercase; letter-spac
 .fehler { color: var(--schlecht); min-height: 1.2em; }
 .zeile { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .mono { font-family: var(--zahl-schrift); font-variant-numeric: tabular-nums; }
-/* Lesehilfe unter Diagrammen: ein Satz, was man sieht. Für das Publikum bei der Präsentation. */
+/* Lesehilfe unter jedem Diagramm. Das Wort "So lesen:" setzt CSS selbst davor (::before). */
 .hinweis { font-size: 13px; color: var(--leise); margin: 2px 0 0; }
 .hinweis::before { content: "So lesen: "; font-weight: 600; color: var(--text); }
 
+
 /* ---------- 4. Bausteine ---------- */
 .karte { background: var(--flaeche); border: 1px solid var(--linie-fein); padding: 16px 18px; }
-/* Kennzahlen-Kacheln: Beschriftung klein, Zahl groß, Akzentstrich links. */
+/* Kennzahlen-Kacheln. Trick für die feinen Linien dazwischen: Das Raster hat 1 Pixel Abstand
+   und selbst die Linienfarbe als Hintergrund. Durch die Lücken scheint die Linie durch. */
 .kacheln { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--linie-fein);
            border: 1px solid var(--linie-fein); }
 .kachel { background: var(--flaeche); padding: 12px 16px 14px; border-left: 3px solid var(--akzent); }
 .kachel small { display: block; font: 600 12px var(--zahl-schrift); color: var(--leise); text-transform: uppercase; letter-spacing: .1em; }
-.kachel b { font: 600 30px/1.2 var(--zahl-schrift); font-variant-numeric: tabular-nums; }
+.kachel b { font: 600 30px/1.2 var(--zahl-schrift); font-variant-numeric: tabular-nums; text-shadow: 0 0 18px rgba(255, 255, 255, .08); }
 .kachel b.lila { color: var(--lila); }
 
+/* Knöpfe: rot gefüllt. .zweit = nur Rahmen, .klein = kleiner, .gefahr = Löschen. */
 button { font: 600 15px var(--titel-schrift); letter-spacing: .08em; text-transform: uppercase; padding: 9px 16px; border: 1px solid var(--akzent);
          background: var(--akzent); color: var(--akzent-text); cursor: pointer; }
 button:hover { filter: brightness(1.12); }
 button.zweit { background: transparent; color: var(--text); border-color: var(--linie); }
-.kopf button.zweit { color: var(--kopf-text); border-color: currentColor; }
+.kopf button.zweit { border-color: currentColor; }
 button.klein { padding: 5px 11px; font-size: 13px; }
 button.gefahr { background: transparent; color: var(--schlecht); border-color: var(--schlecht); }
 button:disabled { opacity: .4; cursor: default; filter: none; }
 input, select { font: 14px var(--zahl-schrift); padding: 8px 10px; border: 1px solid var(--linie); background: var(--flaeche); color: var(--text); }
 
-/* Tabellen im Stil einer Zeitenliste: feine Linien, Zahlen rechtsbündig gleich breit. */
+/* Tabellen im Stil einer Zeitenliste: feine Linien, Kopfzeile in kleinen Großbuchstaben. */
 table { width: 100%; border-collapse: collapse; }
 th { text-align: left; color: var(--leise); font: 600 12px var(--zahl-schrift); text-transform: uppercase; letter-spacing: .08em;
      padding: 8px 10px; border-bottom: 1px solid var(--linie); }
@@ -143,19 +160,22 @@ tr.ungueltig td { color: var(--leise); }
 /* Schnellste Runde in Lila. */
 tr.beste td { color: var(--lila); font-weight: 600; }
 td.lila { color: var(--lila); font-weight: 600; }
+/* Kleine Marke, z. B. "Practice" oder "Box". Rennen bekommen einen roten Rahmen. */
 .marke { display: inline-block; padding: 1px 8px; font: 600 11px var(--zahl-schrift); letter-spacing: .06em; text-transform: uppercase;
          border: 1px solid var(--linie); color: var(--leise); }
 .marke.rennen { border-color: var(--akzent); color: var(--akzent); }
 .pos { font: 700 18px var(--titel-schrift); width: 42px; }
 
-/* Upload-Feld: gestrichelter Rahmen, beim Darüberziehen in Akzentfarbe. */
+/* Upload-Feld: gestrichelter Rahmen, beim Darüberziehen einer Datei rot (app.js setzt .drueber). */
 .upload { border: 2px dashed var(--linie); padding: 26px; text-align: center; background: var(--flaeche); }
 .upload.drueber { border-color: var(--akzent); }
+/* Fortschrittsbalken: app.js setzt die Breite des inneren Streifens von 0 bis 100 %. */
 .balken { height: 6px; background: var(--flaeche2); overflow: hidden; margin-top: 12px; }
 .balken div { height: 100%; width: 0; background: var(--akzent); transition: width .2s; }
 
+
 /* ---------- 5. Seiten ---------- */
-/* Rundenzeiten als Säulen. Höhe = wie viel langsamer als die beste Runde. */
+/* Sitzung: Rundenzeiten als Säulen. Die Höhe rechnet app.js aus (je höher, desto langsamer). */
 .saeulen { display: flex; align-items: flex-end; gap: 3px; height: 160px; padding-top: 10px; border-bottom: 1px solid var(--linie); }
 .saeule { flex: 1; min-width: 4px; background: var(--a); opacity: .8; cursor: pointer; }
 .saeule:hover { opacity: 1; }
@@ -163,10 +183,12 @@ td.lila { color: var(--lila); font-weight: 600; }
 .saeule.beste { background: var(--lila); opacity: 1; }
 .saeule.gewaehlt { outline: 2px solid var(--b); outline-offset: 1px; opacity: 1; }
 
-/* Vergleich: Karte links (bleibt beim Scrollen stehen), Diagramme rechts. */
+/* Vergleich: zwei Spalten. Links Karte und Abschnitte (bleiben beim Scrollen stehen), rechts die Diagramme. */
 .vergleich { display: grid; grid-template-columns: minmax(300px, 520px) 1fr; gap: 16px; align-items: start; }
 .vergleich .links { position: sticky; top: 100px; }
+/* Unter 1000 Pixel Breite: alles untereinander. */
 @media (max-width: 1000px) { .vergleich { grid-template-columns: 1fr; } .vergleich .links { position: static; } }
+/* Die Karte ist immer quadratisch (aspect-ratio 1 / 1). */
 #karte { width: 100%; aspect-ratio: 1 / 1; display: block; }
 .diagramm { background: var(--flaeche); border: 1px solid var(--linie-fein); padding: 10px 12px 6px; margin-bottom: 10px; }
 .diagramm .titel { font: 700 15px var(--titel-schrift); text-transform: uppercase; letter-spacing: .08em; }
@@ -174,12 +196,13 @@ td.lila { color: var(--lila); font-weight: 600; }
 .legende i { display: inline-block; width: 18px; height: 4px; vertical-align: middle; margin-right: 6px; }
 .a { color: var(--a); } .b { color: var(--b); }
 b.a, b.b { font: 700 18px var(--titel-schrift); }
+/* plus = B langsamer (rot), minus = B schneller (grün). */
 .plus { color: var(--schlecht); } .minus { color: var(--gut); }
 .abschnitte td.balkenzelle { width: 45%; }
 .abschnitte .dbalken { height: 10px; }
 .ablesen { font: 13px var(--zahl-schrift); color: var(--leise); min-height: 1.5em; margin: 8px 0 0; }
 
-/* Info-Seite: Datenweg als Kette von Stationen. */
+/* Info-Seite: der Datenweg als Reihe von Stationen, darunter der Aufbau einer .ibt-Datei. */
 .fluss { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--linie-fein); border: 1px solid var(--linie-fein); }
 .fluss .schritt { background: var(--flaeche); padding: 14px; }
 .fluss .schritt .nr { font: 600 12px var(--zahl-schrift); color: var(--akzent); letter-spacing: .1em; }
@@ -189,22 +212,18 @@ b.a, b.b { font: 700 18px var(--titel-schrift); }
 .bytes div { padding: 10px 8px; border-right: 1px solid var(--bg); color: var(--text); }
 code { font-family: var(--zahl-schrift); background: var(--flaeche2); padding: 1px 5px; font-size: 13px; border: 1px solid var(--linie-fein); }
 
-/* Anmelde-Fenster */
+/* Anmelde-Fenster: dunkler Schleier über der ganzen Seite, Formular in der Mitte. */
 .fenster { position: fixed; inset: 0; background: rgba(0, 0, 0, .6); display: grid; place-items: center; z-index: 20; }
 .fenster[hidden] { display: none; }
 .fenster .karte { width: min(380px, 92vw); display: grid; gap: 10px; border-top: 3px solid var(--akzent); }
 
-/* Umschalter für die Design-Vorschau (unten rechts). */
-.themawahl { position: fixed; right: 16px; bottom: 16px; display: flex; z-index: 30; border: 1px solid var(--linie); background: var(--flaeche); }
-.themawahl a { padding: 8px 12px; font: 600 12px var(--zahl-schrift); color: var(--leise); text-transform: uppercase; letter-spacing: .06em; }
-.themawahl a.aktiv { background: var(--akzent); color: var(--akzent-text); }
-.themawahl a:hover { text-decoration: none; }
-
-/* uPlot (Diagramm-Bibliothek) an das Design anpassen. */
+/* uPlot (die Diagramm-Bibliothek) bringt eigene Legende und Fadenkreuz mit. Legende aus, senkrechte Linie gestrichelt. */
 .u-legend { display: none; }
 .u-cursor-x { border-right: 1px dashed var(--achse) !important; }
 .u-cursor-y { display: none; }
 
+
+/* ---------- 6. Handy ---------- */
 @media (max-width: 760px) {
   .kopf { height: auto; flex-wrap: wrap; padding: 10px 16px; }
   .menue { width: 100%; margin-left: 0; height: 40px; overflow-x: auto; }
@@ -212,21 +231,3 @@ code { font-family: var(--zahl-schrift); background: var(--flaeche2); padding: 1
   main { padding: 20px 16px 60px; }
   h1 { font-size: 30px; }
 }
-
-/* ---------- Eigenheiten von Thema B (Renningenieur) ----------
-   Wirkt wie ein gedruckter Datenbericht: weiße Kopfzeile mit roter Zielflaggen-Kante,
-   kräftige schwarze Linien über Kacheln und Karten statt farbiger Seitenstriche. */
-html[data-thema="ingenieur"] .kopf { box-shadow: 0 3px 0 var(--akzent); margin-bottom: 3px; }
-html[data-thema="ingenieur"] .menue a.aktiv { border-bottom-color: var(--akzent); color: var(--akzent); }
-html[data-thema="ingenieur"] .kachel { border-left: 0; border-top: 3px solid var(--linie); }
-html[data-thema="ingenieur"] .kacheln { border: 0; gap: 12px; background: transparent; }
-html[data-thema="ingenieur"] .karte, html[data-thema="ingenieur"] .diagramm { border: 1px solid var(--linie-fein); border-top: 2px solid var(--linie); }
-html[data-thema="ingenieur"] h2 { border-bottom: 2px solid var(--linie); }
-html[data-thema="ingenieur"] .rubrik { color: var(--leise); }
-html[data-thema="ingenieur"] h1 { font-size: 44px; }
-html[data-thema="ingenieur"] .status { background: var(--bg); }
-
-/* ---------- Eigenheiten von Thema A (Boxenmauer) ----------
-   Leuchtende Zahlen auf Schwarz, Kartenkanten nur angedeutet, aktive Kachel mit rotem Strich. */
-html[data-thema="boxenmauer"] .kachel b { text-shadow: 0 0 18px rgba(255, 255, 255, .08); }
-html[data-thema="boxenmauer"] h1 { text-shadow: 0 0 24px rgba(255, 59, 31, .18); }

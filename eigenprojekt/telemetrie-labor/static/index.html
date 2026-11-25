@@ -1,32 +1,37 @@
 <!doctype html>
-<html lang="de" data-thema="boxenmauer">
+<!--
+  Telemetrie-Labor: index.html, das Gerüst der Oberfläche.
+
+  Das ist die einzige HTML-Seite. Sie enthält nur den Rahmen: Kopfzeile, Statusleiste,
+  einen leeren Bereich <main id="app"> und das Anmelde-Fenster. Den Inhalt (Sitzungen,
+  Vergleich, Bestenliste, Info) zeichnet app.js je nach Adresse in <main> hinein.
+  So eine Seite nennt man "Single Page App": Beim Klicken lädt der Browser keine neue Seite,
+  er holt nur neue Daten (JSON) vom Pi.
+
+  Ablauf beim Öffnen von http://<Pi>:5080:
+    1. Flask (labor.py, Funktion start) schickt diese Datei.
+    2. Der Browser lädt Schriften und Design (style.css) und die Diagramm-Bibliothek uPlot.
+    3. Zum Schluss lädt er app.js. Das Skript fragt die API nach Daten und baut die Seite.
+-->
+<html lang="de">
 <head>
 <meta charset="utf-8">
+<!-- Auf dem Handy nicht verkleinert darstellen, sondern in Gerätebreite. -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Telemetrie-Labor</title>
-<!-- Symbol im Browser-Tab: kleine Zielflagge (als SVG direkt in der Adresse, keine eigene Datei). -->
+<!-- Symbol im Browser-Tab: eine kleine Zielflagge, als SVG direkt in der Adresse (keine eigene Datei nötig). -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 4'%3E%3Crect width='4' height='4' fill='%23fff'/%3E%3Cpath d='M0 0h1v1H0zM2 0h1v1H2zM1 1h1v1H1zM3 1h1v1H3zM0 2h1v1H0zM2 2h1v1H2zM1 3h1v1H1zM3 3h1v1H3z'/%3E%3C/svg%3E">
-<!-- Thema wählen, bevor die Seite gezeichnet wird (sonst blitzt kurz das falsche Thema auf).
-     Reihenfolge: ?thema=... in der Adresse, sonst die letzte Wahl in diesem Browser, sonst Boxenmauer. -->
-<script>
-  (function () {
-    var erlaubt = ['boxenmauer', 'ingenieur'];
-    var aus_adresse = new URLSearchParams(location.search).get('thema');
-    var gemerkt = null;
-    try { gemerkt = localStorage.getItem('thema'); } catch (e) {}
-    var thema = erlaubt.indexOf(aus_adresse) >= 0 ? aus_adresse : (erlaubt.indexOf(gemerkt) >= 0 ? gemerkt : 'boxenmauer');
-    document.documentElement.dataset.thema = thema;
-    try { localStorage.setItem('thema', thema); } catch (e) {}
-  })();
-</script>
-<!-- Diagramm-Bibliothek uPlot und unser Design. Alles liegt lokal auf dem Pi, kein Internet nötig. -->
+<!-- Design-Dateien. Alles liegt lokal auf dem Pi, das Labor braucht kein Internet.
+     ?v=3 ist eine Versionsnummer: Ändert sie sich, lädt der Browser die Datei neu statt die alte aus dem Zwischenspeicher. -->
 <link rel="stylesheet" href="/static/uPlot.min.css">
-<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/style.css?v=3">
 </head>
 <body>
-<!-- Kopfzeile: Name, Menü, Anmelden. -->
+
+<!-- Kopfzeile: Logo (führt zur Startseite), Menü, Anmelde-Knopf. -->
 <header class="kopf">
   <a class="logo" href="#/"><span class="flagge"></span><span><b>Telemetrie-Labor</b><small>iRacing-Daten · ausgewertet auf dem Raspberry Pi 400</small></span></a>
+  <!-- data-seite sagt app.js, welcher Menüpunkt zu welcher Seite gehört (für die Markierung "aktiv"). -->
   <nav class="menue">
     <a href="#/" data-seite="">Sitzungen</a>
     <a href="#/bestenliste" data-seite="bestenliste">Bestenliste</a>
@@ -34,13 +39,14 @@
   </nav>
   <button id="login" class="zweit klein">Anmelden</button>
 </header>
+
 <!-- Statusleiste: app.js füllt sie alle 10 Sekunden mit Werten vom Pi (/api/system). -->
 <div class="status" id="status"><span class="an">Pi verbinde ...</span></div>
 
 <!-- Hier zeichnet app.js die jeweilige Seite hinein. -->
 <main id="app"><p class="leise">Lade ...</p></main>
 
-<!-- Anmelde-Fenster (versteckt, bis man auf "Anmelden" klickt). -->
+<!-- Anmelde-Fenster. hidden = versteckt, bis man auf "Anmelden" klickt. -->
 <div id="loginFenster" class="fenster" hidden>
   <form id="loginForm" class="karte">
     <h3>Anmelden</h3>
@@ -51,13 +57,8 @@
   </form>
 </div>
 
-<!-- Umschalter zwischen den beiden Design-Varianten (nur für die Vorschau). -->
-<div class="themawahl" id="themawahl">
-  <a href="?thema=boxenmauer" data-thema="boxenmauer">A · Boxenmauer</a>
-  <a href="?thema=ingenieur" data-thema="ingenieur">B · Renningenieur</a>
-</div>
-
+<!-- Skripte am Ende: So ist das Gerüst oben schon da, wenn sie starten. -->
 <script src="/static/uPlot.iife.min.js"></script>
-<script src="/static/app.js"></script>
+<script src="/static/app.js?v=3"></script>
 </body>
 </html>

@@ -28,6 +28,8 @@ sudo apt-get install -y python3-numpy python3-flask python3-dotenv
 # 2. Einstellungen anlegen, falls es noch keine gibt (Vorlage: .env.example).
 [ -f .env ] || cp .env.example .env
 
+# ======== SCHRITT 1 von 21: Das Labor wird zum Dienst ========
+# systemd ist der Dienst-Verwalter von Linux. Er startet labor.py beim Hochfahren des Pi und nach einem Absturz neu.
 # 3. systemd-Dienst schreiben: läuft als dieser Benutzer, in diesem Ordner, startet bei Fehlern neu.
 sudo tee /etc/systemd/system/$DIENST.service > /dev/null <<EOF
 [Unit]

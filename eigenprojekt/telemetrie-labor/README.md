@@ -24,6 +24,12 @@ flowchart LR
 - Every lap is resampled to 1000 points along the track, so two laps compare point by point; the time gap is `t_B − t_A`.
 - Laps are invalid when the car was in the pit lane, off track for more than half a second, not on track, or the recording has a gap.
 
+## Design and status bar
+
+The "pit wall" theme is dark like a race engineer's monitors, with signal red as accent. Numbers use JetBrains Mono so lap times line up; the fastest lap is purple as in TV timing, and every chart has a one-line "So lesen" (how to read) hint for the audience. All colours are CSS variables in [`style.css`](static/style.css), which the map and charts read as well. Fonts (Barlow, Barlow Condensed, JetBrains Mono, SIL OFL) are bundled in [`static/schrift/`](static/schrift/). A status bar shows live Pi health every 10 s: CPU temperature, load, RAM, uptime, database size and free SD space, read from `/sys` and `/proc` by `systemwerte` in [`labor.py`](labor.py).
+
+The code carries markers `SCHRITT n von 21` (step n of 21) that follow one `.ibt` file from service start to finished chart; the German README lists all steps with file and function.
+
 ## Privacy and security
 
 The session info in every `.ibt` lists names and customer IDs of every driver in the session. The lab only keeps track, length, session type and your own car; `.ibt` files are deleted after processing and are in `.gitignore`. Anyone on the network may view, but uploading and deleting need a login (without a password only on the Pi itself). `python3 labor.py passwort` stores a PBKDF2 hash in `.env.password` (mode 600), which is git-ignored and watched by the commit guard.

@@ -63,6 +63,10 @@ Danach wird jede Runde auf ein festes Raster von 1000 Punkten entlang der Streck
 
 Eine einzige Seite ([`static/`](static/)) holt alle Daten als JSON von der REST-API. Die Streckenkarte zeichnet ein Canvas aus Breiten- und Längengrad. Damit sie nicht gestaucht wirkt, werden die Längengrade mit cos(Breite) verkürzt. Die Diagramme kommen von [uPlot](https://github.com/leeoniya/uPlot) (50 KB). Die Bibliothek liegt lokal im Repo, das Labor braucht also kein Internet.
 
+Das Design heißt "Boxenmauer": dunkel wie die Monitore der Renningenieure, Signalrot als Akzent. Zahlen stehen in JetBrains Mono, einer Schrift mit gleich breiten Ziffern, damit Rundenzeiten sauber untereinander stehen. Die schnellste Runde ist lila, so wie im TV-Timing. Unter jedem Diagramm erklärt ein Satz "So lesen:", was man sieht. Alle Farben stehen als Variablen in [`style.css`](static/style.css). Karte und Diagramme lesen dieselben Variablen, deshalb ändert man eine Farbe an genau einer Stelle. Die Schriften (Barlow, Barlow Condensed, JetBrains Mono, SIL Open Font License) liegen in [`static/schrift/`](static/schrift/).
+
+Die Statusleiste unter der Kopfzeile zeigt alle 10 Sekunden, wie es dem Pi geht: CPU-Temperatur, Last, Arbeitsspeicher, Laufzeit, Größe der Datenbank und freier Platz auf der SD-Karte. Die Werte liest [`labor.py`](labor.py) (Funktion `systemwerte`) aus den Textdateien, die Linux unter `/sys` und `/proc` bereitstellt.
+
 ## Datenschutz und Sicherheit
 
 - Die Session-Infos jeder `.ibt` enthalten Namen und Kunden-IDs aller Fahrer der Session, bei einem Rennen über 40 fremde Personen. Das Labor liest daraus nur Strecke, Länge, Art der Session und das eigene Auto (über `DriverCarIdx`). Der Test prüft, dass keine fremden Namen oder IDs in der Datenbank landen.
@@ -103,6 +107,34 @@ Dateien direkt am Pi einlesen, ohne Browser: `python3 labor.py import datei.ibt`
 | [einrichten.sh](einrichten.sh) | Pakete und systemd-Dienst |
 | [.env.example](.env.example) | Vorlage für `.env` und `.env.password` |
 | [test_labor.py](test_labor.py) | Test mit selbst gebauter `.ibt` |
+
+## Den Code Schritt für Schritt lesen
+
+Im Code steht vor jeder wichtigen Stelle eine Marke `SCHRITT n von 21`. Wer den Marken der Reihe nach folgt, geht den Weg einer `.ibt`-Datei vom Start des Dienstes bis zum fertigen Diagramm. Mit Strg+Shift+F in VS Code nach `SCHRITT 8` suchen springt direkt hin.
+
+| Schritt | Was passiert | Datei, Funktion |
+|---|---|---|
+| 1 | Das Labor wird zum systemd-Dienst | `einrichten.sh` |
+| 2 | Server startet, liest `.env` und `.env.password` | `labor.py`, Anfang |
+| 3 | Browser öffnet die Seite | `labor.py` `start`, `app.js` Ende |
+| 4 | Pi meldet seinen Zustand (Statusleiste) | `labor.py` `systemwerte`, `app.js` `statusleiste` |
+| 5 | Anmelden, Passwort gegen PBKDF2-Hash prüfen | `app.js` Login, `labor.py` `hash_bilden`, `passwort_ok` |
+| 6 | `.ibt` hochladen mit Fortschrittsbalken | `app.js` `hochladen` |
+| 7 | Server nimmt die Datei an | `labor.py` `api_upload`, `einlesen` |
+| 8 | Kopf der `.ibt` lesen | `ibt_lesen.py` `kopf_lesen` |
+| 9 | Session-Infos lesen, fremde Fahrer auslassen | `ibt_lesen.py` `session_lesen` |
+| 10 | Messwerte per numpy-memmap lesen | `ibt_lesen.py` `kanaele_lesen` |
+| 11 | Ziellinie finden | `ibt_lesen.py` `ziellinien` |
+| 12 | Runden bilden und prüfen | `ibt_lesen.py` `runden_bauen` |
+| 13 | Jede Runde auf 1000 Punkte umrechnen | `ibt_lesen.py` `runden_bauen` |
+| 14 | In SQLite speichern | `labor_db.py` `speichern`, `packen` |
+| 15 | `.ibt` wieder löschen | `labor.py` `api_upload` (`finally`) |
+| 16 | Sitzungen und Runden anzeigen | `app.js` `ansichtStart`, `ansichtSitzung` |
+| 17 | Zwei Runden vergleichen: Zeitabstand, Abschnitte | `app.js` `ansichtVergleich` |
+| 18 | Streckenkarte zeichnen | `app.js` `karteVorbereiten` |
+| 19 | Diagramme zeichnen (uPlot, gemeinsamer Cursor) | `app.js` `ansichtVergleich` |
+| 20 | Bestenliste | `app.js` `ansichtBestenliste`, `labor_db.py` `bestenliste` |
+| 21 | Alles automatisch prüfen | `test_labor.py` |
 
 ## Grenzen
 

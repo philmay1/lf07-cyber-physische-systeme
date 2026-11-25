@@ -47,6 +47,8 @@ from flask import Flask, jsonify, request, send_from_directory, session
 # Ordner dieses Skripts.
 HIER = Path(__file__).resolve().parent
 
+# ======== SCHRITT 2 von 21: Der Server startet und liest seine Einstellungen ========
+# Port und Größenlimit kommen aus .env, Passwort-Hash und Cookie-Schlüssel aus .env.password. Beides steht nie im Code.
 # .env und .env.password laden (python-dotenv). Schon gesetzte Variablen gewinnen.
 try:
     from dotenv import load_dotenv
@@ -76,6 +78,8 @@ app.config["MAX_CONTENT_LENGTH"] = MAX_MB * 1024 * 1024
 
 # ---------- Passwort ----------
 
+# ======== SCHRITT 5 von 21: Passwort prüfen, ohne es zu speichern ========
+# PBKDF2 rechnet 200.000 Mal SHA-256. Gespeichert wird nur das Ergebnis, das Passwort selbst nie.
 # Macht aus einem Passwort einen Hash: pbkdf2$Runden$Salt$Hash (alles als Text).
 def hash_bilden(passwort, salt=None, runden=200_000):
     salt = salt or secrets.token_hex(16)
@@ -108,6 +112,8 @@ def verboten():
 
 # ---------- Seiten und Daten ----------
 
+# ======== SCHRITT 3 von 21: Der Browser öffnet die Seite ========
+# Flask schickt index.html. Der Browser lädt dann style.css und app.js, und app.js holt alle Daten als JSON.
 # Die Oberfläche: eine einzige Seite, der Rest kommt per JavaScript.
 @app.route("/")
 def start():
@@ -139,6 +145,8 @@ def api_logout():
     return jsonify(ok=True)
 
 
+# ======== SCHRITT 4 von 21: Der Pi meldet, wie es ihm geht ========
+# Linux legt Temperatur, Laufzeit und Speicher als kleine Textdateien unter /sys und /proc ab. Wir lesen sie nur.
 # Zustand des Pi für die Statusleiste: Temperatur, Last, Speicher, Laufzeit.
 # Linux legt diese Werte als Textdateien ab (/sys, /proc). Fehlt eine Datei (z. B. unter Windows), kommt None.
 @app.route("/api/system")
@@ -217,6 +225,8 @@ def api_bestenliste():
     return jsonify(labor_db.bestenliste(labor_db.verbinden()))
 
 
+# ======== SCHRITT 7 von 21: Der Server nimmt die Datei an ========
+# Erst prüfen, ob dieser Browser das darf. Dann die Datei in eine Zwischendatei schreiben und auswerten lassen.
 # .ibt hochladen: zwischenspeichern, auswerten, speichern, Datei löschen.
 # Zwei Wege: Der Browser schickt die Datei als reinen Datenstrom (schnell, Name im Kopf X-Dateiname).
 # Ein Formular-Upload (z. B. curl -F datei=@...) geht auch, dauert auf dem Pi aber gut doppelt so lange
@@ -242,6 +252,8 @@ def api_upload():
         sid = einlesen(tmp, name)
     except ValueError as fehler:
         return jsonify(ok=False, meldung=f"Datei nicht lesbar: {fehler}"), 400
+    # ======== SCHRITT 15 von 21: Die .ibt-Datei wieder löschen ========
+    # finally läuft immer, auch nach einem Fehler. So bleibt keine .ibt mit fremden Namen auf dem Pi liegen.
     finally:
         os.remove(tmp)
     return jsonify(ok=True, sitzung=sid)

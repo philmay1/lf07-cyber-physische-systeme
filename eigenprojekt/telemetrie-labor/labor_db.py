@@ -84,6 +84,8 @@ def entpacken(blob):
     return json.loads(zlib.decompress(blob).decode("utf-8"))
 
 
+# ======== SCHRITT 14 von 21: In SQLite speichern ========
+# Eine Zeile in sitzung, eine Zeile pro Runde in runde. Die Messkurven werden gepackt (packen).
 # Speichert eine ausgewertete Datei. Gibt die neue Sitzungs-Nummer zurück.
 def speichern(con, session, runden, dateiname):
     with con:

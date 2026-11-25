@@ -35,6 +35,8 @@ async function api(url, opt) {
   return j;
 }
 
+// ======== SCHRITT 5 von 21: Anmelden ========
+// Das Passwort geht an /api/login. Der Server prüft es gegen den Hash und setzt ein unterschriebenes Cookie.
 // ---------- Login ----------
 async function statusLaden() {
   STATUS = await api('/api/status');
@@ -61,6 +63,8 @@ document.getElementById('loginForm').addEventListener('submit', async e => {
   } catch (err) { fehler.textContent = err.message; }
 });
 
+// ======== SCHRITT 4 von 21: Die Statusleiste fragt alle 10 Sekunden nach ========
+// Admin-Blick: Läuft der Server, wie warm ist die CPU, wie voll ist die SD-Karte?
 // ---------- Statusleiste: der Pi meldet sich ----------
 // Holt alle 10 Sekunden CPU-Temperatur, Last, Speicher und Laufzeit vom Pi (/api/system).
 // Das ist der Blick des Admins: Läuft der Server, wie warm ist er, wie voll ist die Platte?
@@ -101,6 +105,8 @@ async function zeigen() {
 }
 window.addEventListener('hashchange', zeigen);
 
+// ======== SCHRITT 16 von 21: Sitzungen anzeigen ========
+// Die Liste kommt von /api/sitzungen (labor_db.sitzungen). Klick auf eine Zeile öffnet die Sitzung.
 // ---------- Start: Upload und Sitzungen ----------
 async function ansichtStart() {
   const liste = await api('/api/sitzungen');
@@ -131,6 +137,8 @@ async function ansichtStart() {
   if (STATUS.darf_aendern) uploadEinrichten();
 }
 
+// ======== SCHRITT 6 von 21: Die .ibt-Datei wird hochgeladen ========
+// Der Browser schickt die Datei als Datenstrom an /api/upload und zeigt dabei den Fortschritt.
 // Upload mit Fortschrittsbalken (XMLHttpRequest meldet, wie viel schon übertragen ist).
 function uploadEinrichten() {
   const feld = document.getElementById('upload'), eingabe = document.getElementById('datei');
@@ -166,6 +174,8 @@ function hochladen(datei) {
   x.send(datei);
 }
 
+// ======== SCHRITT 16 von 21: Eine Sitzung mit allen Runden ========
+// Säulen und Tabelle zeigen jede Runde. Zwei Runden auswählen, dann vergleichen.
 // ---------- Sitzung: Runden ----------
 async function ansichtSitzung(id) {
   const s = await api(`/api/sitzung/${id}`);
@@ -224,6 +234,8 @@ async function ansichtSitzung(id) {
   auffrischen();
 }
 
+// ======== SCHRITT 17 von 21: Zwei Runden vergleichen ========
+// Beide Runden kommen mit 1000 Punkten. Zeitabstand = Zeit B minus Zeit A an jedem Punkt.
 // ---------- Vergleich zweier Runden ----------
 async function ansichtVergleich(idA, idB) {
   const [A, B] = await Promise.all([api(`/api/runde/${idA}`), api(`/api/runde/${idB}`)]);
@@ -282,6 +294,8 @@ async function ansichtVergleich(idA, idB) {
 
   // Streckenkarte zeichnen.
   const karte = karteVorbereiten(document.getElementById('karte'), A, B, allein ? null : schlimmster);
+  // ======== SCHRITT 19 von 21: Die Diagramme zeichnen ========
+  // uPlot zeichnet die Kurven. Alle Diagramme teilen sich einen Cursor, die Karte läuft mit.
   // Diagramme: Titel, Linien [Daten, Farbe, Name, Strichmuster], Höhe in Pixeln, Lesehilfe.
   const fa = farbe('a'), fb = farbe('b'), fgas = farbe('gas'), fbremse = farbe('bremse');
   const linien = [
@@ -318,6 +332,8 @@ async function ansichtVergleich(idA, idB) {
   window.onresize = () => diagramme.forEach(u => u.setSize({ width: u.root.parentElement.clientWidth - 24, height: u.height }));
 }
 
+// ======== SCHRITT 18 von 21: Die Streckenkarte zeichnen ========
+// Aus Breiten- und Längengrad wird ein Bild. Farbe zeigt, was der Fahrer gerade tut.
 // Zeichnet die Strecke aus GPS-Punkten, eingefärbt nach Gas und Bremse von Runde A.
 function karteVorbereiten(canvas, A, B, verlust) {
   const dpr = window.devicePixelRatio || 1;
@@ -371,6 +387,8 @@ function karteVorbereiten(canvas, A, B, verlust) {
   };
 }
 
+// ======== SCHRITT 20 von 21: Die Bestenliste ========
+// labor_db.bestenliste sucht pro Strecke und Auto die schnellste saubere Runde.
 // ---------- Bestenliste ----------
 async function ansichtBestenliste() {
   const liste = await api('/api/bestenliste');
@@ -425,16 +443,8 @@ async function ansichtInfo() {
     <p class="leise mono">Raspberry Pi 400 · Python 3.9 · numpy · Flask · SQLite (WAL) · uPlot · Canvas · systemd · WLAN und Tailscale</p>`;
 }
 
-// ---------- Design-Vorschau: Thema umschalten, ohne die aktuelle Seite zu verlieren ----------
-document.querySelectorAll('#themawahl a').forEach(a => {
-  a.classList.toggle('aktiv', a.dataset.thema === document.documentElement.dataset.thema);
-  a.addEventListener('click', e => {
-    e.preventDefault();
-    try { localStorage.setItem('thema', a.dataset.thema); } catch (err) {}
-    location.href = `?thema=${a.dataset.thema}${location.hash}`;
-  });
-});
-
+// ======== SCHRITT 3 von 21: Hier startet die Oberfläche im Browser ========
+// Erst Login-Zustand fragen, dann die passende Seite zeichnen, dann die Statusleiste starten.
 // ---------- Start ----------
 statusLaden().then(zeigen).catch(zeigen);
 statusleiste();

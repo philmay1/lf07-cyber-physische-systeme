@@ -48,6 +48,8 @@ PUNKTE = 1000
 NEBEN_DER_STRECKE = 0
 
 
+# ======== SCHRITT 8 von 21: Den Kopf der .ibt lesen ========
+# Die ersten 144 Byte sagen, wo was in der Datei steht: Abtastrate, Variablenliste, Session-Infos, Messwerte.
 # Liest Kopf, Variablenliste und Session-Infos. Gibt ein Wörterbuch zurück.
 def kopf_lesen(pfad):
     with open(pfad, "rb") as f:
@@ -88,6 +90,8 @@ def yaml_wert(text, schluessel):
     return m.group(1).strip() if m else ""
 
 
+# ======== SCHRITT 9 von 21: Session-Infos lesen, Datenschutz beachten ========
+# Im YAML-Text stehen alle Fahrer der Session. Wir nehmen nur Strecke, Länge, Art und das eigene Auto.
 # Liest nur die Angaben, die wir speichern wollen. Keine Fahrernamen, keine Kunden-IDs.
 def session_lesen(info):
     # Streckenlänge steht als "5.7508 km" im Text.
@@ -109,6 +113,8 @@ def session_lesen(info):
     }
 
 
+# ======== SCHRITT 10 von 21: Die Messwerte lesen ========
+# numpy legt eine Maske über die Datei (memmap) und liest nur 15 von rund 290 Kanälen.
 # Liest die gewünschten Kanäle als numpy-Spalten (nur lesen, nichts wird kopiert, bis man rechnet).
 def kanaele_lesen(pfad, kopf):
     namen, formate, offsets = [], [], []
@@ -125,6 +131,8 @@ def kanaele_lesen(pfad, kopf):
     return np.memmap(pfad, dtype=satz, mode="r", offset=kopf["daten_off"], shape=(kopf["saetze"],))
 
 
+# ======== SCHRITT 11 von 21: Die Ziellinie finden ========
+# LapDistPct springt von fast 100 % auf fast 0 %. Der genaue Zeitpunkt liegt zwischen zwei Messungen.
 # Findet die Zeitpunkte, an denen das Auto die Ziellinie überquert.
 def ziellinien(d):
     pct = d["LapDistPct"].astype("f8")
@@ -138,6 +146,8 @@ def ziellinien(d):
     return i, zeiten
 
 
+# ======== SCHRITT 12 von 21: Runden bilden und prüfen ========
+# Zwischen zwei Ziellinien liegt eine Runde. Box, Ausritt oder Lücke machen sie ungültig.
 # Zerlegt die Datei in Runden und rechnet jede Runde auf 1000 Punkte entlang der Strecke um.
 def runden_bauen(d, takt):
     idx, zeiten = ziellinien(d)
@@ -163,6 +173,8 @@ def runden_bauen(d, takt):
             grund = "Ausritt"
         elif np.max(np.diff(tt)) > 1.0:
             grund = "Lücke in der Aufzeichnung"
+        # ======== SCHRITT 13 von 21: Jede Runde auf 1000 Punkte umrechnen ========
+        # Erst dadurch lassen sich zwei Runden Punkt für Punkt vergleichen, auch wenn eine schneller war.
         # Auf ein festes Raster umrechnen: 1000 Punkte von 0 bis 100 % der Runde.
         raster = np.linspace(0.0, 1.0, PUNKTE, endpoint=False)
         def r(name, faktor=1.0):

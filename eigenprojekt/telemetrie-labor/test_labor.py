@@ -33,6 +33,8 @@ def pruefe(bedingung, text):
     print("ok  ", text)
 
 
+# ======== SCHRITT 21 von 21: Alles automatisch prüfen ========
+# Der Test baut eine eigene .ibt und prüft Lesen, Rundenzeit, Datenschutz, Upload, Login und Löschen.
 # Kanäle der Test-Datei: (Name, Typ laut iRacing, numpy-Typ).
 KANAELE = [("SessionTime", 5, "<f8"), ("Lap", 2, "<i4"), ("LapDistPct", 4, "<f4"), ("Speed", 4, "<f4"),
            ("Throttle", 4, "<f4"), ("Brake", 4, "<f4"), ("Gear", 2, "<i4"), ("RPM", 4, "<f4"),
